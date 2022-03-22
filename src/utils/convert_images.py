@@ -69,7 +69,7 @@ def copy_paste_rename(image_list, target_dir='', prefix=''):
 
 if __name__ == '__main__':
     root = os.path.dirname(__file__)
-    wildcat_creek_dir = os.path.join(root, 'WildcatCreek-Data')
+    wildcat_creek_dir = os.path.join(root, '../../WildcatCreek-Data')
     print(wildcat_creek_dir)
 
     # get all images list
