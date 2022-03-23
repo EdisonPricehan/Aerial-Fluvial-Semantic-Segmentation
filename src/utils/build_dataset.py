@@ -57,8 +57,14 @@ def train_test_split(csv_file, test_ratio, seed=42):
 
 if __name__ == '__main__':
     dataset_dir = os.path.join(os.path.dirname(__file__), '../../WildcatCreek-Data')
-    output_file = os.path.join(os.path.dirname(__file__), '../dataset', 'dataset.csv')
-    # build_dataset(dataset_dir, output_file)
+    output_dir = os.path.join(os.path.dirname(__file__), '../dataset/WildcatCreek-Data')
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+    output_file = os.path.join(output_dir, 'dataset.csv')
 
+    # write image and mask path pairs as rows into csv file
+    build_dataset(dataset_dir, output_file)
+
+    # write split training and test file names into separate csv files
     train_test_split(output_file, test_ratio=0.2)
 
