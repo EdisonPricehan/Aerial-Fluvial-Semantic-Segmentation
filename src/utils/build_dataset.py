@@ -55,6 +55,16 @@ def train_test_split(csv_file, test_ratio, seed=42):
             writer.writerow(line)
 
 
+def get_dataset_list(filename=''):
+    if filename == '':
+        print("Need to specify which csv file to read!")
+        return []
+
+    with open(filename, 'r') as f:
+        reader = csv.reader(f)
+        return list(reader)
+
+
 if __name__ == '__main__':
     dataset_dir = os.path.join(os.path.dirname(__file__), '../../WildcatCreek-Data')
     output_dir = os.path.join(os.path.dirname(__file__), '../dataset/WildcatCreek-Data')
@@ -63,8 +73,10 @@ if __name__ == '__main__':
     output_file = os.path.join(output_dir, 'dataset.csv')
 
     # write image and mask path pairs as rows into csv file
-    build_dataset(dataset_dir, output_file)
+    # build_dataset(dataset_dir, output_file)
 
     # write split training and test file names into separate csv files
-    train_test_split(output_file, test_ratio=0.2)
+    # train_test_split(output_file, test_ratio=0.2)
 
+    # test output of dataset read from csv file
+    get_dataset_list(output_file)
