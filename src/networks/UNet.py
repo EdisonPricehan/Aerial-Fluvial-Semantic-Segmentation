@@ -140,11 +140,11 @@ if __name__ == '__main__':
 
     train = False
     if train:
-        f = FluvialCNN(net, training_data, test_data, model_dir, epochs=5, learning_rate=1e-5, batch_size=6,
+        f = FluvialCNN(net, training_data, test_data, model_dir, epochs=10, learning_rate=1e-5, batch_size=6,
                        save_checkpoint=False, project_name='U-Net-train')
         if not load:
             print("Start training ...")
-            f.train(with_validation=True)
+            f.train(with_validation=False)
             f.save()
         else:
             print("Start testing ...")
