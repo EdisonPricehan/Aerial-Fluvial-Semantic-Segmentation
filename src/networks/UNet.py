@@ -10,6 +10,7 @@ from torch import nn
 import torch.nn.functional as F
 from fluvial_cnn import FluvialCNN
 from dataset import FluvialDataset
+from src.utils.custom_transforms import resize
 
 
 class UNet(nn.Module):
@@ -118,27 +119,41 @@ class OutConv(nn.Module):
 
 
 if __name__ == '__main__':
-    load = False
-    model_name = ''
+    load = True  # Specify whether you want to load model, if False, no need to care about model_name
+
+    model_name = 'model-unet-03-25-2022-00_47_41.pth'  # Specify target model name to be loaded here
+
     model_dir = os.path.join(os.path.dirname(__file__), '../models/WildcatCreek-Data')
     model_to_load = os.path.join(model_dir, model_name)
+
     if load:
         # Load in previous model weights
         net = UNet(3, 2)
-        net.load_state_dict(torch.load(model_dir + model_to_load))
+        net.load_state_dict(torch.load(model_to_load))
     else:
         # build the neural network from scratch
         net = UNet(3, 2)
 
     dataset_dir = os.path.join(os.path.dirname(__file__), '../dataset/WildcatCreek-Data')
-    training_data = FluvialDataset(dataset_dir, train=True)
-    test_data = FluvialDataset(dataset_dir, train=False)
-    f = FluvialCNN(net, training_data, test_data, model_dir)
-    train = True
+    training_data = FluvialDataset(dataset_dir, train=True, transform=resize, target_transform=resize)
+    test_data = FluvialDataset(dataset_dir, train=False, transform=resize, target_transform=resize)
+
+    train = False
     if train:
-        epochs = 1
-        for t in range(epochs):
-            print(f"Epoch {t + 1}\n-------------------------------")
-            f.train()
+        f = FluvialCNN(net, training_data, test_data, model_dir, epochs=5, learning_rate=1e-5, batch_size=6,
+                       save_checkpoint=False, project_name='U-Net-train')
+        if not load:
+            print("Start training ...")
+            f.train(with_validation=True)
+            f.save()
+        else:
+            print("Start testing ...")
             f.test()
-        print("Done!")
+    else:
+        print("Start testing ...")
+        # set batch_size to 1 to get loss for each test image
+        f = FluvialCNN(net, training_data, test_data, model_dir, epochs=5, learning_rate=1e-5, batch_size=1,
+                       save_checkpoint=False, project_name='U-Net-test-batch-size-1')
+        f.test()
+
+    print("Done!")
