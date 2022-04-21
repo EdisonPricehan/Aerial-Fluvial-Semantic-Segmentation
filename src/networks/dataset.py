@@ -43,24 +43,35 @@ class FluvialDataset(Dataset):
             image -  the transformed image to be used in neural network training
             mask - the transformed mask to be used in neural network training"""
         #  Define the location of the mask and image to get
-        img_path = self.img_files[idx]  # pull out the image files associated with
-        mask_path = self.mask_files[idx]  # pull out the mask file for the selected image (mask and image files in same order)
-        # read the image and mask using the torchvision.io read_image method which returns an image as a
+        img_path = self.img_files[idx]
+        mask_path = self.mask_files[idx]
+
+        # read the image and mask using the torchvision.io read_image method which returns an image as a tensor
         image = read_image(img_path)
         mask = read_image(mask_path)
+
         # apply transforms
-        if self.transform:  # If image transforms have been specified
+        if self.transform:
             image = self.transform(image)  # apply the transform to the image (e.x. add padding)
-        if self.target_transform:  # if mask transforms have been specified
+            image = image / 255
+        if self.target_transform:
             mask = self.target_transform(mask)  # apply the transform to the image (e.x. add padding)
+            mask = mask.squeeze()
+            mask = mask / 255
         return image, mask
 
 
 if __name__ == '__main__':
     dataset_dir = os.path.join(os.path.dirname(__file__), '../dataset/WildcatCreek-Data')
-    training_dataset = FluvialDataset(dataset_dir, train=True)
-    test_dataset = FluvialDataset(dataset_dir, train=False)
+
+    from src.utils.custom_transforms import resize
+    training_dataset = FluvialDataset(dataset_dir, train=True, transform=resize, target_transform=resize)
+    test_dataset = FluvialDataset(dataset_dir, train=False, transform=resize, target_transform=resize)
     print(len(training_dataset))
     print(len(test_dataset))
+    # get the shape of image and mask of first pair
+    print(training_dataset[0][0].shape)
+    print(training_dataset[0][1].shape)
+
     # print(training_dataset[0])
     # print(test_dataset[0])
