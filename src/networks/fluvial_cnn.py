@@ -10,6 +10,7 @@ import logging
 import wandb
 from src.utils.custom_metrics import dice_coeff, multiclass_dice_coeff
 import torch.nn.functional as F
+import torchvision.transforms.functional as TF
 
 
 class FluvialCNN:
@@ -155,7 +156,19 @@ class FluvialCNN:
 
                 # Casts operations to mixed precision
                 with torch.cuda.amp.autocast(enabled=self.enable_amp):
-                    pred = self.network(X)
+                    # adapt predictions for various networks
+                    if 'u-net' in self.project_name.lower():
+                        pred = self.network(X)
+                    elif 'deeplabv3' in self.project_name.lower():
+                        normalized_batch = TF.normalize(X, mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+                        pred = self.network(normalized_batch)['out']
+                    # more network specific prediction transforms added here
+                    else:
+                        print("Network unrecognized when training!")
+                        exit(0)
+
+                    print(f"Epoch {epoch}, batch {batch}, pred shape {pred.shape}")
+
                     loss = self.loss_fn(pred, y)
 
                 # Backpropagation
@@ -224,14 +237,23 @@ class FluvialCNN:
 
         test_loss, dice_score = 0, 0
         with torch.no_grad():
-            for batch_id, (X, y) in enumerate(dataloader):
+            for batch_id, (X, y) in enumerate(tqdm.tqdm(dataloader)):
                 X, y = X.to(device=self.device, dtype=torch.float32), y.to(self.device, dtype=torch.long)
                 mask_true = F.one_hot(y, n_classes).permute(0, 3, 1, 2).float()
 
-                mask_pred = self.network(X)
-                # print("mask_pred: ")
-                # print(mask_pred.shape)
-                # print(mask_pred[0])
+                # adapt predictions for various networks
+                if 'u-net' in self.project_name.lower():
+                    mask_pred = self.network(X)
+                elif 'deeplabv3' in self.project_name.lower():
+                    normalized_batch = TF.normalize(X, mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+                    mask_pred = self.network(normalized_batch)['out']
+                # more network specific prediction transforms added here
+                else:
+                    print("Network unrecognized when training!")
+                    exit(0)
+
+                print(f"Batch {batch_id}, pred shape {mask_pred.shape}")
+
                 batch_loss = self.loss_fn(mask_pred, y).item()
                 test_loss += batch_loss
 
@@ -239,7 +261,6 @@ class FluvialCNN:
                 if len(self.classes) == 1:
                     mask_pred = (F.sigmoid(mask_pred) > 0.5).float()
                     dice_coefficient = dice_coeff(mask_pred, mask_true, reduce_batch_first=False)
-
                 else:
                     mask_pred = F.one_hot(mask_pred.argmax(dim=1), n_classes).permute(0, 3, 1, 2).float()
                     # compute the Dice score, ignoring background
