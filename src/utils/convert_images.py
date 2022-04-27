@@ -103,12 +103,32 @@ def binarize_images(image_list, target_dir=''):
         cv2.imwrite(target_name, water_mask)
 
 
+def scale_masks_to_visualize(mask_dir, output_dir):
+    assert os.path.exists(mask_dir), "Mask directory does not exist"
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+        print(f"{output_dir} was created.")
+
+    ori_mask_list = []
+    get_filelist(mask_dir, ori_mask_list)
+    if len(ori_mask_list) == 0:
+        print("Empty mask list!")
+        return
+
+    for mask_path in ori_mask_list:
+        ori_mask = cv2.imread(mask_path)
+        target_mask = (ori_mask * 255).astype(np.uint8)
+        target_name = os.path.join(output_dir, os.path.basename(mask_path))
+        print(target_name)
+        cv2.imwrite(target_name, target_mask)
+
+
 if __name__ == '__main__':
     root = os.path.dirname(__file__)
     wildcat_creek_dir = os.path.join(root, '../../WildcatCreek-Data')
     print(wildcat_creek_dir)
 
-    # get all images list
+    # get all images list recursively
     img_list = []
     get_filelist(wildcat_creek_dir, img_list)
     print(len(img_list))
@@ -141,4 +161,9 @@ if __name__ == '__main__':
     output_path = os.path.join(wildcat_creek_dir, 'annotations_binary')
     binarize_images(mask_list, target_dir=output_path)
 
+    # convert mask images that range 0-1 to 0-255 to be visualized
+    # river_seg_dir = os.path.join(root, '../../River-Segmentation-Data')
+    # river_seg_mask_dir = os.path.join(river_seg_dir, 'annotations')
+    # river_seg_mask_output_dir = os.path.join(river_seg_dir, 'annotations_binary')
+    # scale_masks_to_visualize(river_seg_mask_dir, river_seg_mask_output_dir)
 
