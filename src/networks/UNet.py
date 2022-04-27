@@ -138,7 +138,10 @@ if __name__ == '__main__':
     training_data = FluvialDataset(dataset_dir, train=True, transform=resize, target_transform=resize)
     test_data = FluvialDataset(dataset_dir, train=False, transform=resize, target_transform=resize)
 
-    train = False
+    train = False  # Specify whether you want to test your loaded model, if False, above 'load' must be True
+    if not train:
+        assert load, "Must load model if you want to test the model!"
+
     if train:
         f = FluvialCNN(net, training_data, test_data, model_dir, epochs=10, learning_rate=1e-5, batch_size=6,
                        save_checkpoint=False, project_name='U-Net-train')
