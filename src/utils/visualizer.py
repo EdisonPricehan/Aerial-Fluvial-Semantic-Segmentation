@@ -22,12 +22,16 @@ def plot_img_and_mask(img, mask):
 
 if __name__ == '__main__':
     from src.networks.dataset import FluvialDataset
-    dataset_dir = os.path.join(os.path.dirname(__file__), '../dataset/WildcatCreek-Data')
-    training_dataset = FluvialDataset(dataset_dir, train=True)
-    print(len(training_dataset))
+
+    # define multiple dataset directories to visualize
+    dataset_dir1 = os.path.join(os.path.dirname(__file__), '../dataset/WildcatCreek-Data')
+    dataset_dir2 = os.path.join(os.path.dirname(__file__), '../dataset/River-Segmentation-Data')
+
+    training_dataset = FluvialDataset(dataset_dir2, train=True)
+    print(f"Train dataset size: {len(training_dataset)}")
     img, mask = training_dataset[0]  # plot the first training data pair
     img = img.permute(1, 2, 0)  # change from c x h x w to h x w x c for display
     mask = mask.squeeze()  # reduce from 3d to 2d
-    print(img.shape)
-    print(mask.shape)
+    print(f"Image shape: {img.shape}")
+    print(f"Mask shape: {mask.shape}")
     plot_img_and_mask(img, mask)
