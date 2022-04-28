@@ -65,18 +65,30 @@ def get_dataset_list(filename=''):
         return list(reader)
 
 
-if __name__ == '__main__':
-    dataset_dir = os.path.join(os.path.dirname(__file__), '../../WildcatCreek-Data')
-    output_dir = os.path.join(os.path.dirname(__file__), '../dataset/WildcatCreek-Data')
+def build_csv_from_dataset(dataset_name):
+    # define dataset path
+    dataset_dir = os.path.join(os.path.dirname(__file__), '../..', dataset_name)
+    assert os.path.exists(dataset_dir), "Dataset directory does not exist!"
+
+    # define output csv file directory
+    output_dir = os.path.join(os.path.dirname(__file__), '../dataset', dataset_name)
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
+
+    # define output csv file path
     output_file = os.path.join(output_dir, 'dataset.csv')
+    build_dataset(dataset_dir, output_file)
+    return output_file
 
-    # write image and mask path pairs as rows into csv file
-    # build_dataset(dataset_dir, output_file)
 
-    # write split training and test file names into separate csv files
-    # train_test_split(output_file, test_ratio=0.2)
+if __name__ == '__main__':
+    # define dataset name that matches the directory name that stores 'images' and 'annotations' directories
+    dataset1 = 'WildcatCreek-Data'
+    dataset2 = 'River-Segmentation-Data'
+
+    # choose the dataset name you want to construct csv file and do train-test split
+    output_file = build_csv_from_dataset(dataset2)
+    train_test_split(output_file, test_ratio=0.2)
 
     # test output of dataset read from csv file
     get_dataset_list(output_file)
