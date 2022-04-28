@@ -117,9 +117,11 @@ def scale_masks_to_visualize(mask_dir, output_dir):
 
     for mask_path in ori_mask_list:
         ori_mask = cv2.imread(mask_path)
-        target_mask = (ori_mask * 255).astype(np.uint8)
+        target_mask = (ori_mask * 255).astype(np.uint8)[:, :, 0]
+        print(f"Target mask shape: {target_mask.shape}")
+        # print(f"Target mask: {target_mask}")
         target_name = os.path.join(output_dir, os.path.basename(mask_path))
-        print(target_name)
+        print(f"Target mask path: {target_name}")
         cv2.imwrite(target_name, target_mask)
 
 
