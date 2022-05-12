@@ -2,8 +2,6 @@
 
 import os
 import torch
-from torch import nn
-import torch.nn.functional as F
 from fluvial_cnn import FluvialCNN
 from dataset import FluvialDataset
 import torchvision.models as models
@@ -26,11 +24,16 @@ if __name__ == '__main__':
         # build the neural network from scratch
         net = models.segmentation.deeplabv3_resnet101(pretrained=False, progress=False, num_classes=2)
 
-    dataset_dir = os.path.join(os.path.dirname(__file__), '../dataset/WildcatCreek-Data')
-    training_data = FluvialDataset(dataset_dir, train=True, transform=resize, target_transform=resize)
-    test_data = FluvialDataset(dataset_dir, train=False, transform=resize, target_transform=resize)
+    # define dataset directories we want to test our current model with
+    dataset_dir1 = os.path.join(os.path.dirname(__file__), '../dataset/WildcatCreek-Data')
+    dataset_dir2 = os.path.join(os.path.dirname(__file__), '../dataset/River-Segmentation-Data')
 
-    train = False  # Specify whether you want to test your loaded model, if False, above 'load' must be True
+    # specify the target dataset to get the training and testing dataset objects
+    training_data = FluvialDataset(dataset_dir1, train=True, transform=resize, target_transform=resize)
+    test_data = FluvialDataset(dataset_dir1, train=False, transform=resize, target_transform=resize)
+
+    # Specify whether you want to test your loaded model, if False, above 'load' must be True
+    train = False
     if not train:
         assert load, "Must load model if you want to test the model!"
 
