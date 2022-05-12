@@ -85,15 +85,19 @@ class FluvialCNN:
         Output:
             Void- Dataloaders that are callable
             Also Prints out the shape of the variables to glean insight into data"""
+        n_cpu = os.cpu_count()
+        print(f"Number of workers: {n_cpu}")
 
         # Create data loaders.
         if self.train_dataset:
-            self.train_dataloader = DataLoader(self.train_dataset, batch_size=self.batch_size, shuffle=True)
+            self.train_dataloader = DataLoader(self.train_dataset, batch_size=self.batch_size,
+                                               shuffle=True, num_workers=n_cpu)
         else:
             print("Train dataset is None!")
 
         if self.test_dataset:
-            self.test_dataloader = DataLoader(self.test_dataset, batch_size=self.batch_size, shuffle=True)
+            self.test_dataloader = DataLoader(self.test_dataset, batch_size=self.batch_size,
+                                              shuffle=True, num_workers=n_cpu)
         else:
             print("Test dataset is None!")
 
