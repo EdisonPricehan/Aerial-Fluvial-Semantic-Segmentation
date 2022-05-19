@@ -128,39 +128,51 @@ def scale_masks_to_visualize(mask_dir, output_dir):
 if __name__ == '__main__':
     root = os.path.dirname(__file__)
     wildcat_creek_dir = os.path.join(root, '../../WildcatCreek-Data')
-    print(wildcat_creek_dir)
+    print(f"{wildcat_creek_dir=}")
+    wabash_footage2_dir = os.path.join(root, '../../WabashRiver-Data/footage2/wabash')
+    print(f"{wabash_footage2_dir=}")
 
     # get all images list recursively
     img_list = []
-    get_filelist(wildcat_creek_dir, img_list)
+    # get_filelist(wildcat_creek_dir, img_list)
+    get_filelist(wabash_footage2_dir, img_list)
     print(len(img_list))
 
     # get training images list
-    data = filter_by_suffix(img_list, '.jpg')
-    print(len(data))
-    # print(images[:10])
+    images = filter_by_suffix(img_list, '.jpg')
+    print(f"Images num: {len(images)}")
 
     # get all masks list
     masks = filter_by_name(img_list, name='color_mask')
-    print(len(masks))
-    # print(masks[:10])
+    print(f"Masks num: {len(masks)}")
 
     # paste all wildcat creek images to images directory
     # data_dir = os.path.join(wildcat_creek_dir, 'images')
     # copy_paste_rename(data, target_dir=data_dir, prefix='wildcat')
+
+    # paste all wabash images to images directory
+    images_dir = os.path.join(wabash_footage2_dir, 'images')
+    # copy_paste_rename(images, target_dir=images_dir, prefix='wabash2')
 
     # paste all wildcat creek masks to annotations directory
     # masks_dir = os.path.join(wildcat_creek_dir, 'annotations')
     # print(masks_dir)
     # copy_paste_rename(masks, target_dir=masks_dir, prefix='wildcat-mask')
 
+    # paste all wabash masks to annotations directory
+    masks_dir = os.path.join(wabash_footage2_dir, 'annotations')
+    print(f"{masks_dir=}")
+    # copy_paste_rename(masks, target_dir=masks_dir, prefix='wabash2-mask')
+
     # binarize masks to water and non-water pixels
-    mask_list_path = os.path.join(wildcat_creek_dir, 'annotations')
-    print(mask_list_path)
+    # mask_list_path = os.path.join(wildcat_creek_dir, 'annotations')
+    mask_list_path = os.path.join(wabash_footage2_dir, '../annotations')
+    print(f"{mask_list_path=}")
     mask_list = []
     get_filelist(mask_list_path, mask_list)
-    print(len(mask_list))
-    output_path = os.path.join(wildcat_creek_dir, 'annotations_binary')
+    print(f"Masks num: {len(mask_list)}")
+    # output_path = os.path.join(wildcat_creek_dir, 'annotations_binary')
+    output_path = os.path.join(wabash_footage2_dir, '../annotations_binary')
     binarize_images(mask_list, target_dir=output_path)
 
     # convert mask images that range 0-1 to 0-255 to be visualized
