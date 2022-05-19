@@ -35,7 +35,7 @@ class FluvialDataset(Dataset):
         return len(self.img_files)
 
     def __getitem__(self, idx):
-        """This function of the dataset class returns an item from the dataset. I will in fact return an image from
+        """This function of the dataset class returns an item from the dataset. It will in fact return an image from
         the dataset and its corresponding label or segmented image.
         Input
             idx - the index of the image to get from a list of all images/masks
