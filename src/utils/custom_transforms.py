@@ -4,9 +4,9 @@ import torchvision.transforms.functional as F
 import os
 
 
-def resize(image_tensor, size=300):
+def resize(image_tensor, h=320, w=544):
     # print(f"Original shape: {image_tensor.shape}")
-    new_image_tensor = F.resize(image_tensor, size=size)
+    new_image_tensor = F.resize(image_tensor, size=[h, w])
     # print(f"Resized shape: {new_image_tensor.shape}")
     return new_image_tensor
 
