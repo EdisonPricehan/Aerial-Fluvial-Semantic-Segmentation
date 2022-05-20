@@ -5,7 +5,7 @@ import csv
 import numpy as np
 
 
-def build_dataset(dir='', output_file=''):
+def build_dataset(dir='', output_file='', image_dir='images', mask_dir='annotations_binary'):
     if dir == '' or output_file == '':
         print("Need to specify the directory that contains images and masks and the output csv file!")
         return
@@ -13,8 +13,8 @@ def build_dataset(dir='', output_file=''):
         print(f"{dir} does not exist!")
         return
 
-    image_dir = os.path.join(dir, 'images')
-    mask_dir = os.path.join(dir, 'annotations_binary')
+    image_dir = os.path.join(dir, image_dir)
+    mask_dir = os.path.join(dir, mask_dir)
     if not os.path.exists(image_dir) or not os.path.exists(mask_dir):
         print("Image directory or mask directory does not exist!")
         return
@@ -65,7 +65,8 @@ def get_dataset_list(filename=''):
         return list(reader)
 
 
-def build_csv_from_dataset(dataset_name):
+def build_csv_from_dataset(dataset_name, image_dir='images', mask_dir='annotations_binary',
+                           output_filename='dataset.csv'):
     # define dataset path
     dataset_dir = os.path.join(os.path.dirname(__file__), '../..', dataset_name)
     assert os.path.exists(dataset_dir), "Dataset directory does not exist!"
@@ -76,9 +77,9 @@ def build_csv_from_dataset(dataset_name):
         os.makedirs(output_dir)
 
     # define output csv file path
-    output_file = os.path.join(output_dir, 'dataset.csv')
-    build_dataset(dataset_dir, output_file)
-    return output_file
+    output_filepath = os.path.join(output_dir, output_filename)
+    build_dataset(dataset_dir, output_filepath, image_dir, mask_dir)
+    return output_filepath
 
 
 if __name__ == '__main__':
@@ -87,8 +88,11 @@ if __name__ == '__main__':
     dataset2 = 'River-Segmentation-Data'
 
     # choose the dataset name you want to construct csv file and do train-test split
-    output_file = build_csv_from_dataset(dataset2)
-    train_test_split(output_file, test_ratio=0.2)
+    # output_file = build_csv_from_dataset(dataset2)
+    # train_test_split(output_file, test_ratio=0.2)
+
+    aug_train = build_csv_from_dataset(dataset1, image_dir='images_aug', mask_dir='annotations_binary_aug',
+                                       output_filename='train_aug.csv')
 
     # test output of dataset read from csv file
-    get_dataset_list(output_file)
+    # get_dataset_list(output_file)
