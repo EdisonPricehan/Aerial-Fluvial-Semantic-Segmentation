@@ -50,16 +50,16 @@ if __name__ == '__main__':
 
     # init dataset and dataloader
     dataset_dir = os.path.join(os.path.dirname(__file__), dataset_dir)
-    test_data = FluvialDataset(dataset_dir, train=False, transform=resize, target_transform=resize)
+    test_data = FluvialDataset(dataset_dir, train=False, use_augment=False, transform=resize, target_transform=resize)
     print(f"Test num: {len(test_data)}")
     print(f"Image size: {test_data[0][0].shape}, mask size: {test_data[0][1].shape}")
     test_dataloader = DataLoader(test_data, batch_size=test_bs, shuffle=False)
 
     # init logger, log model checkpoints at the end of training
-    wandb_logger = WandbLogger(project=os.path.basename(dataset_dir), name='-'.join([decoder, encoder]),
+    wandb_logger = WandbLogger(project=os.path.basename(dataset_dir), name='-'.join([decoder, encoder, 'test']),
                                log_model=False, anonymous=False,
                                save_dir=os.path.join(os.path.dirname(__file__), '../logs'))
-    wandb_logger.experiment.config.update(args)
+    wandb_logger.experiment.config.update({'test_bs': test_bs})
 
     checkpoint_path = os.path.join(os.path.dirname(__file__), model_path)
     print(f"{checkpoint_path=}")
