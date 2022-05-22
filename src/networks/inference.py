@@ -11,10 +11,39 @@ from pytorch_lightning.loggers import WandbLogger
 from SS_Model_Lit import SSModelGeneric as ssmg, check_encoder_existence, check_decoder_existence
 
 
-def inference(model, test_dataloader, logger):
-    trainer = pl.Trainer(gpus=1, max_epochs=1, logger=logger)
+def inference(model, test_dataloader, logger=None):
+    trainer = pl.Trainer(gpus=1, max_epochs=1, logger=(logger if logger is not None else False))
     # start testing
-    trainer.test(model, test_dataloader)
+    # trainer.test(model, test_dataloader)
+    return trainer.predict(model, dataloaders=test_dataloader)
+
+
+def get_model(model_path):
+    checkpoint_path = os.path.join(os.path.dirname(__file__), model_path)
+    print(f"{checkpoint_path=}")
+    m = ssmg.load_from_checkpoint(checkpoint_path=checkpoint_path)
+    return m
+
+
+def get_dataloader(ds_dir):
+    dataset_dir = os.path.join(os.path.dirname(__file__), ds_dir)
+    test_data = FluvialDataset(dataset_dir, train=False, use_augment=False, transform=resize, target_transform=resize)
+    print(f"Test num: {len(test_data)}")
+    print(f"Image size: {test_data[0][0].shape}, mask size: {test_data[0][1].shape}")
+    test_dataloader = DataLoader(test_data, batch_size=test_bs, shuffle=False)
+    return test_dataloader
+
+
+def get_logger(ds_dir='', encoder_name='', decoder_name='', test_batch_size=None):
+    if ds_dir == '' or encoder_name == '' or decoder_name == '' or test_batch_size is None:
+        print("Need arguments to init logger, return None logger.")
+        return None
+
+    wandb_logger = WandbLogger(project=os.path.basename(ds_dir), name='-'.join([encoder_name, decoder_name, 'test']),
+                               log_model=False, anonymous=False,
+                               save_dir=os.path.join(os.path.dirname(__file__), '../logs'))
+    wandb_logger.experiment.config.update({'test_bs': test_batch_size})
+    return wandb_logger
 
 
 if __name__ == '__main__':
@@ -48,32 +77,22 @@ if __name__ == '__main__':
     if not check_decoder_existence(decoder):
         exit(0)
 
-    # init dataset and dataloader
-    dataset_dir = os.path.join(os.path.dirname(__file__), dataset_dir)
-    test_data = FluvialDataset(dataset_dir, train=False, use_augment=False, transform=resize, target_transform=resize)
-    print(f"Test num: {len(test_data)}")
-    print(f"Image size: {test_data[0][0].shape}, mask size: {test_data[0][1].shape}")
-    test_dataloader = DataLoader(test_data, batch_size=test_bs, shuffle=False)
+    # init dataloader
+    test_dataloader = get_dataloader(dataset_dir)
 
-    # init logger, log model checkpoints at the end of training
-    wandb_logger = WandbLogger(project=os.path.basename(dataset_dir), name='-'.join([decoder, encoder, 'test']),
-                               log_model=False, anonymous=False,
-                               save_dir=os.path.join(os.path.dirname(__file__), '../logs'))
-    wandb_logger.experiment.config.update({'test_bs': test_bs})
+    # init logger
+    logger = get_logger(ds_dir=dataset_dir, encoder_name=encoder, decoder_name=decoder, test_batch_size=test_bs)
 
-    checkpoint_path = os.path.join(os.path.dirname(__file__), model_path)
-    print(f"{checkpoint_path=}")
     # construct desired model if you are sure your checkpoint has no hyper-parameters
     # model = ssmg(arch=decoder, encoder_name=encoder, in_channels=3, out_classes=out_class_num)
     # checkpoint = torch.load(checkpoint_path)
     # model.load_state_dict(checkpoint["state_dict"])
 
-    # else load directly from checkpoint path
-    model = ssmg.load_from_checkpoint(checkpoint_path=checkpoint_path)
-
+    # otherwise load model directly from checkpoint path, model hyper-params will be loaded automatically
+    model = get_model(model_path)
     print(f"{model.hparams=}")
 
     # test
     print("Start inferencing ...")
-    inference(model, test_dataloader, wandb_logger)
+    inference(model, test_dataloader, logger)
     print("Inference finished!")
