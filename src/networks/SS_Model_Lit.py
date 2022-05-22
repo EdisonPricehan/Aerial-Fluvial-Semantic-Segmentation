@@ -108,7 +108,6 @@ class SSModelGeneric(pl.LightningModule):
             f"{stage}_dataset_accuracy": accu
         }
         self.logger.log_metrics(metrics)
-        # self.logger.experiment.log(metrics)
 
         # log images and masks for testing stage
         if stage == "test":
@@ -139,6 +138,12 @@ class SSModelGeneric(pl.LightningModule):
 
     def test_epoch_end(self, outputs):
         return self.shared_epoch_end(outputs, "test")
+
+    def predict_step(self, batch, batch_idx, dataloader_idx=0):
+        logits_mask = self(batch)
+        prob_mask = logits_mask.sigmoid()
+        pred_mask = ((prob_mask > 0.5).float() * 255).to(torch.uint8)
+        return pred_mask  # list([N x C x H x W])
 
     def configure_optimizers(self):
         return torch.optim.Adam(self.parameters(), lr=0.0001)
