@@ -7,10 +7,10 @@ from pprint import pprint
 import torch
 from torch.utils.data import DataLoader
 import torchvision
-from torchvision.io import read_video, write_video
+from torchvision.io import write_video
 
 from dataset import VideoDataset
-import transforms
+from src.utils import video_transforms as transforms
 from inference import get_model, inference
 
 if __name__ == '__main__':

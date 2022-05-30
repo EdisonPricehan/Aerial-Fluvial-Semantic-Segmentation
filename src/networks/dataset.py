@@ -198,7 +198,7 @@ if __name__ == '__main__':
     print(training_dataset[0][1].shape)
 
     # test for VideoDataset
-    import transforms
+    from src.utils import video_transforms as transforms
     import torchvision
     dataset = VideoDataset('./video-path/video_path.csv',
                            transform=torchvision.transforms.Compose([
