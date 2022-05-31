@@ -6,7 +6,8 @@ import cv2
 import numpy as np
 
 
-water_rgb = [128, 64, 128]
+water_rgb_aerial = [128, 64, 128]
+water_rgb_boat = [255, 255, 255]
 
 
 def get_filelist(dir, Filelist):
@@ -72,7 +73,7 @@ def copy_paste_rename(image_list, target_dir='', prefix=''):
             print(f"{new_name} already exists when paste, continue.")
 
 
-def binarize_images(image_list, target_dir=''):
+def binarize_images(image_list, water_rgb, target_dir=''):
     if target_dir == '':
         print("Need to specify target directory!")
         return
@@ -129,22 +130,26 @@ if __name__ == '__main__':
     root = os.path.dirname(__file__)
     wildcat_creek_dir = os.path.join(root, '../../WildcatCreek-Data')
     print(f"{wildcat_creek_dir=}")
-    wabash_footage2_dir = os.path.join(root, '../../WabashRiver-Data/footage2/wabash')
+    wabash_footage2_dir = os.path.join(root, '../../WabashRiverAerial-Data/footage2/wabash')
     print(f"{wabash_footage2_dir=}")
+    sugar_creek_dir = os.path.join(root, '../../SugarCreek-Data')
+    print(f"{sugar_creek_dir=}")
+    wabash_boat_dir = os.path.join(root, '../../WabashRiverBoat-Data')
+    print(f"{wabash_boat_dir=}")
 
     # get all images list recursively
     img_list = []
     # get_filelist(wildcat_creek_dir, img_list)
-    get_filelist(wabash_footage2_dir, img_list)
-    print(len(img_list))
+    # get_filelist(wabash_footage2_dir, img_list)
+    # print(len(img_list))
 
     # get training images list
-    images = filter_by_suffix(img_list, '.jpg')
-    print(f"Images num: {len(images)}")
+    # images = filter_by_suffix(img_list, '.jpg')
+    # print(f"Images num: {len(images)}")
 
     # get all masks list
-    masks = filter_by_name(img_list, name='color_mask')
-    print(f"Masks num: {len(masks)}")
+    # masks = filter_by_name(img_list, name='color_mask')
+    # print(f"Masks num: {len(masks)}")
 
     # paste all wildcat creek images to images directory
     # data_dir = os.path.join(wildcat_creek_dir, 'images')
@@ -160,20 +165,24 @@ if __name__ == '__main__':
     # copy_paste_rename(masks, target_dir=masks_dir, prefix='wildcat-mask')
 
     # paste all wabash masks to annotations directory
-    masks_dir = os.path.join(wabash_footage2_dir, 'annotations')
-    print(f"{masks_dir=}")
+    # masks_dir = os.path.join(wabash_footage2_dir, 'annotations')
+    # print(f"{masks_dir=}")
     # copy_paste_rename(masks, target_dir=masks_dir, prefix='wabash2-mask')
 
     # binarize masks to water and non-water pixels
     # mask_list_path = os.path.join(wildcat_creek_dir, 'annotations')
-    mask_list_path = os.path.join(wabash_footage2_dir, '../annotations')
+    # mask_list_path = os.path.join(wabash_footage2_dir, '../annotations')
+    # mask_list_path = os.path.join(sugar_creek_dir, 'annotations')
+    mask_list_path = os.path.join(wabash_boat_dir, 'annotations')
     print(f"{mask_list_path=}")
     mask_list = []
     get_filelist(mask_list_path, mask_list)
     print(f"Masks num: {len(mask_list)}")
     # output_path = os.path.join(wildcat_creek_dir, 'annotations_binary')
-    output_path = os.path.join(wabash_footage2_dir, '../annotations_binary')
-    binarize_images(mask_list, target_dir=output_path)
+    # output_path = os.path.join(wabash_footage2_dir, '../annotations_binary')
+    # output_path = os.path.join(sugar_creek_dir, 'annotations_binary')
+    output_path = os.path.join(wabash_boat_dir, 'annotations_binary')
+    binarize_images(mask_list, water_rgb=water_rgb_boat, target_dir=output_path)
 
     # convert mask images that range 0-1 to 0-255 to be visualized
     # river_seg_dir = os.path.join(root, '../../River-Segmentation-Data')
