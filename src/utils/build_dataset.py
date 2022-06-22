@@ -3,36 +3,24 @@
 import os
 import csv
 import numpy as np
-
-
-def build_dataset(dir='', output_file='', image_dir='images', mask_dir='annotations_binary'):
-    if dir == '' or output_file == '':
-        print("Need to specify the directory that contains images and masks and the output csv file!")
-        return
-    if not os.path.exists(dir):
-        print(f"{dir} does not exist!")
-        return
-
-    image_dir = os.path.join(dir, image_dir)
-    mask_dir = os.path.join(dir, mask_dir)
-    if not os.path.exists(image_dir) or not os.path.exists(mask_dir):
-        print("Image directory or mask directory does not exist!")
-        return
-
-    # re-write the csv file
-    with open(output_file, 'w', newline='') as f:
-        writer = csv.writer(f)
-        for image_name, mask_name in zip(os.listdir(image_dir), os.listdir(mask_dir)):
-            writer.writerow([os.path.join(image_dir, image_name), os.path.join(mask_dir, mask_name)])
+import fire
 
 
 def train_test_split(csv_file, test_ratio, seed=42):
+    """
+    split train and test filepaths as separate csv files
+    :param csv_file: csv file of all (image, mask) pairs to be split
+    :param test_ratio: ratio of test set
+    :param seed: some fixed integer to allow repeatability
+    :return:
+    """
     output_dir = os.path.dirname(csv_file)
+
+    # train and test csv files will be stored in the same directory with the dataset csv file
     train_file = os.path.join(output_dir, 'train.csv')
     test_file = os.path.join(output_dir, 'test.csv')
 
-    # read image pairs from csv file
-
+    # read image pairs from csv file, get subset as list
     with open(csv_file, 'r') as f:
         reader = csv.reader(f)
         reader_list = list(reader)
@@ -45,6 +33,7 @@ def train_test_split(csv_file, test_ratio, seed=42):
         test_image_mask_list = [reader_list[i] for i in test_indices]
         train_image_mask_list = [reader_list[i] for i in train_indices]
 
+    # write subset of train and test to its csv file
     with open(train_file, 'w', newline='') as f:
         writer = csv.writer(f)
         for line in train_image_mask_list:
@@ -56,6 +45,11 @@ def train_test_split(csv_file, test_ratio, seed=42):
 
 
 def get_dataset_list(filename=''):
+    """
+    get list of (image, mask) tuple from csv file
+    :param filename: absolute path of csv file
+    :return: [(image, mask)]
+    """
     if filename == '':
         print("Need to specify which csv file to read!")
         return []
@@ -65,34 +59,84 @@ def get_dataset_list(filename=''):
         return list(reader)
 
 
-def build_csv_from_dataset(dataset_name, image_dir='images', mask_dir='annotations_binary',
-                           output_filename='dataset.csv'):
-    # define dataset path
-    dataset_dir = os.path.join(os.path.dirname(__file__), '../..', dataset_name)
-    assert os.path.exists(dataset_dir), "Dataset directory does not exist!"
+def build_csv_from_datasets(dataset_dir_list,
+                            image_dir='images',
+                            mask_dir='annotations_binary',
+                            output_dirname='dataset_csv',
+                            output_filename='dataset.csv'):
+    """
+    Choose one or many dataset directories and form csv file to store the image and mask paths.
+    Easy to modify the total datasets for different experiments that may be based on various combinations of multiple
+    datasets, and easy for different train-test split ratios since they all doing things on csv file without any
+    copy or move of original datasets
+    :param dataset_dir_list: list of relative paths to all dataset directories that are interested
+    :param image_dir: inside each dataset directory, the name of subdirectory that stores original images
+    :param mask_dir: inside each dataset directory, the name of subdirectory that stores masks
+    :param output_dirname: used to illustrate the purpose or experimental composition of the datasets used
+    :param output_filename: name of the target csv file
+    :return:
+    """
+    dataset_num = len(dataset_dir_list)
+    if dataset_num == 0:
+        print("Need a non-empty list of all dataset directories' relative paths!")
+        return
+    print(f"Start building csv file from {dataset_num} datasets ...")
 
     # define output csv file directory
-    output_dir = os.path.join(os.path.dirname(__file__), '../dataset', dataset_name)
+    output_dir = os.path.join(os.path.dirname(__file__), '../dataset', output_dirname)
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
     # define output csv file path
     output_filepath = os.path.join(output_dir, output_filename)
-    build_dataset(dataset_dir, output_filepath, image_dir, mask_dir)
-    return output_filepath
+    if os.path.exists(output_filepath):
+        print(f"{output_filepath} already exists, please delete it and try again!")
+        return
+
+    # loop over each dataset directory and append image-mask pairs to the target csv file
+    for dataset_name in dataset_dir_list:
+        # define dataset path
+        dataset_dir = os.path.join(os.path.dirname(__file__), dataset_name)
+        assert os.path.exists(dataset_dir), "Dataset directory does not exist!"
+        print(f"Building for {dataset_dir} ...")
+
+        # make sure both images and masks directories exist
+        image_dir_abs = os.path.join(dataset_dir, image_dir)
+        mask_dir_abs = os.path.join(dataset_dir, mask_dir)
+        if not os.path.exists(image_dir_abs) or not os.path.exists(mask_dir_abs):
+            print("Image directory or mask directory does not exist!")
+            return
+
+        # append to the csv file
+        with open(output_filepath, 'a', newline='') as f:
+            writer = csv.writer(f)
+            for image_name, mask_name in zip(os.listdir(image_dir_abs), os.listdir(mask_dir_abs)):
+                # print(f"{image_name=} {mask_name=}")
+                writer.writerow([os.path.join(image_dir_abs, image_name), os.path.join(mask_dir_abs, mask_name)])
+
+    print("Csv file building finished!")
 
 
 if __name__ == '__main__':
-    # define dataset name that matches the directory name that stores 'images' and 'annotations' directories
-    dataset1 = 'WildcatCreek-Data'
-    dataset2 = 'River-Segmentation-Data'
+    fire.Fire()
 
-    # choose the dataset name you want to construct csv file and do train-test split
-    # output_file = build_csv_from_dataset(dataset2)
-    # train_test_split(output_file, test_ratio=0.2)
+    #### example usage 1 ####
 
-    aug_train = build_csv_from_dataset(dataset1, image_dir='images_aug', mask_dir='annotations_binary_aug',
-                                       output_filename='train_aug.csv')
+    # python build_dataset.py build_csv_from_datasets
+    # "['../../Deep-Learning-Data/Dartmouth_dataset',
+    # '../../Deep-Learning-Data/diVeny_dataset',
+    # '../../Deep-Learning-Data/Eamont_dataset',
+    # '../../Deep-Learning-Data/Kananaskis_dataset',
+    # '../../Deep-Learning-Data/Kingie_dataset',
+    # '../../Deep-Learning-Data/Kinogawa_dataset',
+    # '../../Deep-Learning-Data/Kurobe_dataset',
+    # '../../Deep-Learning-Data/Pacuare_dataset',
+    # '../../Deep-Learning-Data/Quelle_dataset',
+    # '../../Deep-Learning-Data/Sesia_dataset',
+    # '../../Deep-Learning-Data/StMarg_dataset']"
+    # 'images'
+    # 'annotations_tif'
+    # '11-rivers-original'
+    # 'train.csv'
 
-    # test output of dataset read from csv file
-    # get_dataset_list(output_file)
+    #### example usage 1 ####
