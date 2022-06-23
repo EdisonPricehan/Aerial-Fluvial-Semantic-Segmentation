@@ -44,6 +44,39 @@ def train_test_split(csv_file, test_ratio, seed=42):
             writer.writerow(line)
 
 
+def build_test_set(dataset, trainset, testset):
+    """
+    Build test set from the given dataset and trainset and store to testset (all relative paths)
+    """
+    dataset_path = os.path.join(os.path.dirname(__file__), dataset)
+    trainset_path = os.path.join(os.path.dirname(__file__), trainset)
+    testset_path = os.path.join(os.path.dirname(__file__), testset)
+    if not os.path.exists(dataset_path) or not os.path.exists(trainset_path):
+        print("Dataset or trainset directory does not exist!")
+        return
+
+    # get list of image-mask pairs from both dataset and trainset and get the difference set
+    with open(dataset_path, 'r') as f:
+        reader = csv.reader(f)
+        dataset_list = list(reader)
+        dataset_list = [tuple(sub_list) for sub_list in dataset_list]  # convert to tuple
+        dataset_set = set(dataset_list)
+    with open(trainset_path, 'r') as f:
+        reader = csv.reader(f)
+        trainset_list = list(reader)
+        trainset_list = [tuple(sub_list) for sub_list in trainset_list]  # convert to tuple
+        trainset_set = set(trainset_list)
+    testset_set = dataset_set.difference(trainset_set)
+
+    # write testset to csv file
+    with open(testset_path, 'w', newline='') as f:
+        writer = csv.writer(f)
+        for line in testset_set:
+            writer.writerow(line)
+
+    print("Testset csv built!")
+
+
 def get_dataset_list(filename=''):
     """
     get list of (image, mask) tuple from csv file
