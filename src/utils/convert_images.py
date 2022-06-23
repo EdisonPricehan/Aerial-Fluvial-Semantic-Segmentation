@@ -4,9 +4,19 @@ import os
 import shutil
 import cv2
 import numpy as np
+import fire
+from skimage import io
+from tqdm import tqdm
 
 
 water_rgb_aerial = [128, 64, 128]
+bridge_rgb = [119, 11, 32]
+dry_sediment_rgb = [220, 220, 0]
+vegetation_rgb = [107, 142, 35]
+wood_in_river_rgb = [150, 120, 90]
+self_rgb = [10, 0, 0]
+sky_rgb = [70, 130, 180]
+boat_rgb = [0, 0, 230]
 water_rgb_boat = [255, 255, 255]
 
 
@@ -73,12 +83,42 @@ def copy_paste_rename(image_list, target_dir='', prefix=''):
             print(f"{new_name} already exists when paste, continue.")
 
 
-def binarize_images(image_list, water_rgb, target_dir=''):
+def abs_path(rela_path):
+    absolute_path = os.path.join(os.path.dirname(__file__), rela_path)
+    return absolute_path
+
+
+def binarize_masks(mask_dir, target_dir='', water_rgb=None):
+    """
+    Binarize multi-class RGB masks to binary masks (o as non-water and 255 as water)
+    :param mask_dir: relative path to rgb masks directory
+    :param target_dir: relative path to binary masks directory
+    :param water_rgb: rgb list of water pixel
+    :return:
+    """
+    # set default water RGB if not given
+    if water_rgb is None:
+        water_rgb = water_rgb_aerial
+
+    # set absolute paths for input and output directories
+    mask_dir = abs_path(mask_dir)
     if target_dir == '':
-        print("Need to specify target directory!")
+        # if target directory not specified, make it the same-level with mask directory and use a fixed directory name
+        target_dir = os.path.join(mask_dir, '../annotations_binary')
+    else:
+        target_dir = abs_path(target_dir)
+
+    # cannot proceed without input mask directory
+    if not os.path.exists(mask_dir):
+        print(f"{mask_dir} does not exist!")
         return
-    if len(image_list) == 0:
-        print("Empty image list!")
+
+    # get all masks paths as a list
+    mask_list = []
+    get_filelist(mask_dir, mask_list)
+    print(f"Masks num: {len(mask_list)}")
+    if len(mask_list) == 0:
+        print("Empty mask list!")
         return
 
     if os.path.exists(target_dir):
@@ -87,24 +127,34 @@ def binarize_images(image_list, water_rgb, target_dir=''):
         os.makedirs(target_dir)
         print(f"{target_dir} was created.")
 
-    for image_path in image_list:
-        image = cv2.imread(image_path)
-        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-        # water is 255, non-water is 0
-        water_mask = ((image[:, :, 0] == water_rgb[0]) & (image[:, :, 1] == water_rgb[1]) & (image[:, :, 2] == water_rgb[2])).astype(np.uint8)
+    # binarize masks
+    for mask_path in mask_list:
+        mask = cv2.imread(mask_path)
+        mask = cv2.cvtColor(mask, cv2.COLOR_BGR2RGB)
+        # make water 255, non-water 0
+        water_mask = ((mask[:, :, 0] == water_rgb[0]) &
+                      (mask[:, :, 1] == water_rgb[1]) &
+                      (mask[:, :, 2] == water_rgb[2])).astype(np.uint8)
         water_mask *= 255
 
-        # print(water_mask.shape)
-        # print(water_mask)
-        # cv2.imshow("mask", water_mask)
-        # cv2.waitKey(0)
-
-        target_name = os.path.join(target_dir, os.path.basename(image_path))
-        print(target_name)
+        # save binary mask to the desired target directory
+        target_name = os.path.join(target_dir, os.path.basename(mask_path))
         cv2.imwrite(target_name, water_mask)
+        print(f"Saved binary mask to {target_name}.")
+
+    print(f"Binarization finished for all {len(mask_list)} masks!")
 
 
 def scale_masks_to_visualize(mask_dir, output_dir):
+    """
+    Scale 0-1 pixel values to 0-255 for visualization
+    :param mask_dir: relative path to 0-1 masks directory
+    :param output_dir: relative path to 0-255 masks directory
+    :return:
+    """
+    # set absolute paths for input and output directories
+    mask_dir = abs_path(mask_dir)
+    output_dir = abs_path(output_dir)
     assert os.path.exists(mask_dir), "Mask directory does not exist"
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
@@ -120,73 +170,60 @@ def scale_masks_to_visualize(mask_dir, output_dir):
         ori_mask = cv2.imread(mask_path)
         target_mask = (ori_mask * 255).astype(np.uint8)[:, :, 0]
         print(f"Target mask shape: {target_mask.shape}")
-        # print(f"Target mask: {target_mask}")
         target_name = os.path.join(output_dir, os.path.basename(mask_path))
         print(f"Target mask path: {target_name}")
         cv2.imwrite(target_name, target_mask)
 
+    print(f"Scaling finished for {len(ori_mask_list)} masks.")
+
+
+def tiff2png(input_dir, output_dir):
+    input_dir = abs_path(input_dir)
+    output_dir = abs_path(output_dir)
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+        print(f"{output_dir} was created.")
+
+    input_list = []
+    get_filelist(input_dir, input_list)
+
+    for i in tqdm(input_list):
+        im = io.imread(i, as_gray=True)
+        print(f"image shape is {im.shape}")
+
+        # convert image pixels from labels to rgb colors
+        label2rgb = {1: water_rgb_aerial,  # water
+                     2: dry_sediment_rgb,  # Sediment
+                     3: vegetation_rgb,  # Green Veg.
+                     4: vegetation_rgb,  # Senesc. Veg.
+                     5: bridge_rgb  # Paved Road
+                     }
+
+        im = im.astype(np.uint8)
+        im_rgb = np.dstack((im, im, im)).astype(np.uint8)
+        for label, rgb in label2rgb.items():
+            idx = (im == label)
+            im_rgb[idx] = rgb
+        im_rgb = im_rgb.astype(np.uint8)
+
+        # set output file name
+        base_name = os.path.splitext(os.path.basename(i))[0]
+        base_name_ext = base_name + '.png'
+        o = os.path.join(output_dir, base_name_ext)
+
+        io.imsave(o, im_rgb)
+    print("Conversion finished!")
+
 
 if __name__ == '__main__':
-    root = os.path.dirname(__file__)
-    wildcat_creek_dir = os.path.join(root, '../../WildcatCreek-Data')
-    print(f"{wildcat_creek_dir=}")
-    wabash_footage2_dir = os.path.join(root, '../../WabashRiverAerial-Data/footage2/wabash')
-    print(f"{wabash_footage2_dir=}")
-    sugar_creek_dir = os.path.join(root, '../../SugarCreek-Data')
-    print(f"{sugar_creek_dir=}")
-    wabash_boat_dir = os.path.join(root, '../../WabashRiverBoat-Data')
-    print(f"{wabash_boat_dir=}")
+    fire.Fire()
 
-    # get all images list recursively
-    img_list = []
-    # get_filelist(wildcat_creek_dir, img_list)
-    # get_filelist(wabash_footage2_dir, img_list)
-    # print(len(img_list))
+    #### example usage 1 ####
 
-    # get training images list
-    # images = filter_by_suffix(img_list, '.jpg')
-    # print(f"Images num: {len(images)}")
+    # python convert_images.py
+    # tiff2png
+    # '../../WabashRiverAerial-Data/wabash_dataset/test_1_masks'
+    # '../../WabashRiverAerial-Data/wabash_dataset/test_png_masks'
 
-    # get all masks list
-    # masks = filter_by_name(img_list, name='color_mask')
-    # print(f"Masks num: {len(masks)}")
-
-    # paste all wildcat creek images to images directory
-    # data_dir = os.path.join(wildcat_creek_dir, 'images')
-    # copy_paste_rename(data, target_dir=data_dir, prefix='wildcat')
-
-    # paste all wabash images to images directory
-    images_dir = os.path.join(wabash_footage2_dir, 'images')
-    # copy_paste_rename(images, target_dir=images_dir, prefix='wabash2')
-
-    # paste all wildcat creek masks to annotations directory
-    # masks_dir = os.path.join(wildcat_creek_dir, 'annotations')
-    # print(masks_dir)
-    # copy_paste_rename(masks, target_dir=masks_dir, prefix='wildcat-mask')
-
-    # paste all wabash masks to annotations directory
-    # masks_dir = os.path.join(wabash_footage2_dir, 'annotations')
-    # print(f"{masks_dir=}")
-    # copy_paste_rename(masks, target_dir=masks_dir, prefix='wabash2-mask')
-
-    # binarize masks to water and non-water pixels
-    # mask_list_path = os.path.join(wildcat_creek_dir, 'annotations')
-    # mask_list_path = os.path.join(wabash_footage2_dir, '../annotations')
-    # mask_list_path = os.path.join(sugar_creek_dir, 'annotations')
-    mask_list_path = os.path.join(wabash_boat_dir, 'annotations')
-    print(f"{mask_list_path=}")
-    mask_list = []
-    get_filelist(mask_list_path, mask_list)
-    print(f"Masks num: {len(mask_list)}")
-    # output_path = os.path.join(wildcat_creek_dir, 'annotations_binary')
-    # output_path = os.path.join(wabash_footage2_dir, '../annotations_binary')
-    # output_path = os.path.join(sugar_creek_dir, 'annotations_binary')
-    output_path = os.path.join(wabash_boat_dir, 'annotations_binary')
-    binarize_images(mask_list, water_rgb=water_rgb_boat, target_dir=output_path)
-
-    # convert mask images that range 0-1 to 0-255 to be visualized
-    # river_seg_dir = os.path.join(root, '../../River-Segmentation-Data')
-    # river_seg_mask_dir = os.path.join(river_seg_dir, 'annotations')
-    # river_seg_mask_output_dir = os.path.join(river_seg_dir, 'annotations_binary')
-    # scale_masks_to_visualize(river_seg_mask_dir, river_seg_mask_output_dir)
+    #### example usage 1 ####
 
