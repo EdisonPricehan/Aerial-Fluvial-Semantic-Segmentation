@@ -154,8 +154,8 @@ if __name__ == '__main__':
     fire.Fire()
 
     #### example usage 1 ####
-
-    # python build_dataset.py build_csv_from_datasets
+    # python build_dataset.py
+    # build_csv_from_datasets
     # "['../../Deep-Learning-Data/Dartmouth_dataset',
     # '../../Deep-Learning-Data/diVeny_dataset',
     # '../../Deep-Learning-Data/Eamont_dataset',
@@ -171,5 +171,14 @@ if __name__ == '__main__':
     # 'annotations_tif'
     # '11-rivers-original'
     # 'train.csv'
-
     #### example usage 1 ####
+
+    #### example usage 2 ####
+    # python build_dataset.py
+    # build_csv_from_datasets
+    # "['../../WildcatCreek-Data/wildcat_dataset']"
+    # 'images'
+    # 'annotations_binary'
+    # 'WildcatCreek-Data'
+    # 'dataset.csv'
+    #### example usage 2 ####
