@@ -4,6 +4,10 @@ import os
 import csv
 import numpy as np
 import fire
+import cv2
+from tqdm import tqdm
+
+from constants import *
 
 
 def train_test_split(csv_file, test_ratio, seed=42):
@@ -150,10 +154,69 @@ def build_csv_from_datasets(dataset_dir_list,
     print("Csv file building finished!")
 
 
+def build_statistics_from_datasets(dataset_list, output_path):
+    """
+    Build statistics of the given dataset directories
+    :param output_path: relative path of the target csv file
+    :param dataset_list: list of relative paths to all dataset csv files that are interested
+    :return:
+    """
+    # Validity check
+    dataset_num = len(dataset_list)
+    if dataset_num == 0:
+        print("Need a non-empty list of all dataset directories' relative paths!")
+        return
+    print(f"Start building statistics from {dataset_num} datasets ...")
+
+    # construct absolute csv file output path
+    output_path_abs = os.path.join(os.path.dirname(__file__), output_path)
+    print(f"Output path: {output_path_abs}")
+
+    # write header to the csv file
+    with open(output_path_abs, 'w', newline='') as f:
+        writer = csv.writer(f)
+        writer.writerow(['water', 'vegetation', 'sediment', 'sky', 'self', 'obstacles', 'boat', 'bridge'])
+
+    # construct rgb list for all classes with the same order as the header
+    rgb_list = [water_rgb_aerial, vegetation_rgb, dry_sediment_rgb, sky_rgb,
+                self_rgb, wood_in_river_rgb, boat_rgb, bridge_rgb]
+
+    # loop over each dataset directory and write pixel numbers of each class to the target csv file
+    for dataset_path in dataset_list:
+        # define dataset path and check its existence
+        dataset_path_abs = os.path.join(os.path.dirname(__file__), dataset_path)
+        assert os.path.exists(dataset_path_abs), "Dataset directory does not exist!"
+
+        # read image-mask pairs from the csv file
+        image_mask_list = get_dataset_list(dataset_path_abs)
+        print(f"Building statistics for {len(image_mask_list)} masks from {dataset_path_abs} ...")
+
+        with open(output_path_abs, 'a',  newline='') as f:
+            writer = csv.writer(f)
+            for image_mask_path in tqdm(image_mask_list):
+                mask = cv2.imread(image_mask_path[1])  # read mask
+                mask = cv2.cvtColor(mask, cv2.COLOR_BGR2RGB)  # convert to rgb
+                h, w, _ = mask.shape
+                print(f"RGB Mask size: {h}x{w}")
+                class_count_list = []
+                for rgb in rgb_list:
+                    mask_binary = ((mask[:, :, 0] == rgb[0]) &
+                                   (mask[:, :, 1] == rgb[1]) &
+                                   (mask[:, :, 2] == rgb[2])).astype(np.uint8)
+                    count = np.sum(mask_binary)  # sum all pixels of 2d array
+                    class_count_list.append(count)
+                assert len(class_count_list) == len(rgb_list)
+                writer.writerow(class_count_list)
+                assert sum(class_count_list) == h * w, \
+                    f"Pixel number mismatch, all classes {class_count_list} {sum(class_count_list)}, all image {h * w}!"
+
+    print("Statistics csv file building finished!")
+
+
 if __name__ == '__main__':
     fire.Fire()
 
-    #### example usage 1 ####
+    #### example usage 1 of build_csv_from_datasets ####
     # python build_dataset.py
     # build_csv_from_datasets
     # "['../../Deep-Learning-Data/Dartmouth_dataset',
@@ -171,9 +234,9 @@ if __name__ == '__main__':
     # 'annotations_tif'
     # '11-rivers-original'
     # 'train.csv'
-    #### example usage 1 ####
+    #### example usage 1 of build_csv_from_datasets ####
 
-    #### example usage 2 ####
+    #### example usage 2 of build_csv_from_datasets ####
     # python build_dataset.py
     # build_csv_from_datasets
     # "['../../WildcatCreek-Data/wildcat_dataset']"
@@ -181,4 +244,13 @@ if __name__ == '__main__':
     # 'annotations_binary'
     # 'WildcatCreek-Data'
     # 'dataset.csv'
-    #### example usage 2 ####
+    #### example usage 2 of build_csv_from_datasets ####
+
+    #### example usage 1 of build_statistics_from_datasets ####
+    # python build_dataset.py
+    # build_statistics_from_datasets
+    # "['../dataset/WabashRiver-Data/dataset_rgb.csv',
+    # '../dataset/WildcatCreek-Data/dataset_rgb.csv',
+    # '../dataset/Bridges/dataset_4bridges_rgb.csv']"
+    # '../dataset/Wabash-Wildcat/statistics.csv'
+    #### example usage 1 of build_statistics_from_datasets ####
