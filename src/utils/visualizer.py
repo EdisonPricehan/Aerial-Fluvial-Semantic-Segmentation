@@ -1,9 +1,14 @@
 #!E:\anaconda/python
 
 import matplotlib.pyplot as plt
+from matplotlib.ticker import PercentFormatter
 from skimage.color import label2rgb
 import os
 import cv2
+import fire
+import numpy as np
+
+from build_dataset import get_dataset_list
 
 
 def plot_img_and_mask(img, mask):
@@ -100,18 +105,124 @@ def augment_and_show(aug, image, mask=None, bboxes=None, categories=None, catego
     return augmented['image'], augmented['mask']
 
 
+def pie_chart_pixel(statistics_path, save_fig=True):
+    """
+    Plot a pie chart of the pixel statistics.
+    :param statistics_path: relative path to the statistics file
+    :param save_fig: whether to save the figure
+    :return:
+    """
+    # get absolute path of statistics file
+    stat_path_abs = os.path.join(os.path.dirname(__file__), statistics_path)
+    if not os.path.exists(stat_path_abs):
+        raise FileNotFoundError(f'Statistics file {stat_path_abs} not found')
+
+    # read data from statistics file
+    pixel_counts = get_dataset_list(stat_path_abs)
+    if len(pixel_counts) < 2:
+        raise ValueError('Not enough data to plot a pie chart')
+
+    labels = pixel_counts[0]
+    pixel_counts = pixel_counts[1:]
+    pixel_counts = np.array([list(map(int, i)) for i in pixel_counts])
+    print(f"{labels=}")
+    total_pixels = np.sum(pixel_counts).astype(np.uint32)  # use uint32 to avoid overflow
+    print(f"Analysing {len(pixel_counts)} images, {total_pixels} total pixels ...")
+    labels_ratio = [np.sum(pixel_counts[:, l]) / total_pixels for l in range(len(labels))]
+    print(f"{labels_ratio=}")
+
+    # plot pie chart
+    wedges, texts = plt.pie(labels_ratio, shadow=True, startangle=0, radius=1.2,
+                            colors=['purple', 'green', 'yellow', 'blue', 'gray', 'brown', 'cyan', 'red'])
+
+    legend_labels = ['{0} - {1:1.2f} %'.format(i, j * 100) for i, j in zip(labels, labels_ratio)]
+    plt.legend(wedges, legend_labels, title="Pixel Labels", loc="center left", bbox_to_anchor=(-0.75, 0.5), fontsize=10)
+
+    # plt.title('Labelled Pixel Distribution', loc="center", fontsize=12)
+    if save_fig:
+        # save figure
+        fig_path = os.path.join(os.path.dirname(__file__), '../images', 'pie_chart_pixel.png')
+        plt.savefig(fig_path, bbox_inches='tight')
+    else:
+        plt.show()
+
+
+def histogram_pixel(statistics_path, save_fig=True):
+    """
+    plot histogram of water pixel ratio
+    :param statistics_path: relative path to the statistics file
+    :param save_fig: save the figure or not
+    :return:
+    """
+    # get absolute path of statistics file
+    stat_path_abs = os.path.join(os.path.dirname(__file__), statistics_path)
+    if not os.path.exists(stat_path_abs):
+        raise FileNotFoundError(f'Statistics file {stat_path_abs} not found')
+
+    # read data from statistics file
+    pixel_counts = get_dataset_list(stat_path_abs)
+    if len(pixel_counts) < 2:
+        raise ValueError('Not enough data to plot a pie chart')
+    labels = pixel_counts[0]
+    pixel_counts = pixel_counts[1:]
+    pixel_counts = np.array([list(map(int, i)) for i in pixel_counts])  # convert string to int
+    print(f"{labels=}")
+
+    water_ratio = [cnts[0] / sum(cnts) for cnts in pixel_counts]
+    # obstacle_ratio = [cnts[5] / sum(cnts) for cnts in pixel_counts]
+
+    # plot histogram
+    fig, ax = plt.subplots(figsize=(10, 6))
+    N_bins = 50
+    n, bins, patches = ax.hist(water_ratio, bins=N_bins, weights=np.ones(len(water_ratio)) / len(water_ratio),
+                                label='Water', linewidth=0.2, alpha=0.8)
+    # print(f"{bins=}")
+    # print(f"{n=}")
+
+    # do bar color gradient
+    for i in range(len(patches)):
+        # move the desired color span from [0, 1] to [0.3, 0.7] to make the bar more visible
+        color_percentile = (i / N_bins) * 0.7 + 0.3
+        patches[i].set_facecolor(plt.cm.get_cmap("BuPu")(color_percentile))  # Blue to purple
+
+    # plt.title('Water Pixels Image-wise Percentage Distribution Histogram')
+    plt.xlabel('Water Pixels Image-wise Percentage', fontsize=12)
+    plt.ylabel('Image Count Percentage', fontsize=12)
+
+    # emphasize several percentile bins
+    percentiles2ratio = {0.25: sum([n[i] for i, v in enumerate(bins[:-1]) if v >= 0.25]),
+                         0.5: sum([n[i] for i, v in enumerate(bins[:-1]) if v >= 0.5]),
+                         0.75: sum([n[i] for i, v in enumerate(bins[:-1]) if v >= 0.75])}
+    print(f"{percentiles2ratio=}")
+    # plot vertical lines at the desired percentiles and label them
+    for p, v in percentiles2ratio.items():
+        ax.axvline(p, color='green', linestyle='--', ymax=0.8, linewidth=2, label=f'{v:.2f}%')
+        ax.text(p, 0.055, f'{v * 100:.2f}%', color='black', fontsize=14)
+        ax.text(p, 0.05, f'>{p *100:.2f}%', color='black', fontsize=14)
+
+    # make both x and y axes have percentage (%) scale
+    plt.gca().yaxis.set_major_formatter(PercentFormatter(1))
+    plt.gca().xaxis.set_major_formatter(PercentFormatter(1))
+
+    # save histogram as figure or show it
+    if save_fig:
+        fig_path = os.path.join(os.path.dirname(__file__), '../images', 'histogram_pixel.png')
+        plt.savefig(fig_path, bbox_inches="tight")  # need to make it tight to force text visibility
+    else:
+        plt.show()
+
+
 if __name__ == '__main__':
-    from src.networks.dataset import FluvialDataset
+    fire.Fire()
 
-    # define multiple dataset directories to visualize
-    dataset_dir1 = os.path.join(os.path.dirname(__file__), '../dataset/WildcatCreek-Data')
-    dataset_dir2 = os.path.join(os.path.dirname(__file__), '../dataset/River-Segmentation-Data')
+    #### example usage 1 ####
+    # python visualizer.py
+    # histogram_pixel
+    # '../dataset/Wabash-Wildcat/statistics.csv'
+    #### example usage 1 ####
 
-    training_dataset = FluvialDataset(dataset_dir2, train=True)
-    print(f"Train dataset size: {len(training_dataset)}")
-    img, mask = training_dataset[0]  # plot the first training data pair
-    img = img.permute(1, 2, 0)  # change from c x h x w to h x w x c for display
-    mask = mask.squeeze()  # reduce from 3d to 2d
-    print(f"Image shape: {img.shape}")
-    print(f"Mask shape: {mask.shape}")
-    plot_img_and_mask(img, mask)
+    #### example usage 2 ####
+    # python visualizer.py
+    # pie_chart_pixel
+    # '../dataset/Wabash-Wildcat/statistics.csv'
+    #### example usage 2 ####
