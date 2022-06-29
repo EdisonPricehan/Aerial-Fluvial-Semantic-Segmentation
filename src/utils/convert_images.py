@@ -52,31 +52,58 @@ def filter_by_name(image_list, name=''):
     return new_list
 
 
-def copy_paste_rename(image_list, target_dir='', prefix=''):
-    if target_dir == '':
-        print("Need to specify target directory!")
-        return
-    if os.path.exists(target_dir):
-        print(f"{target_dir} already exists.")
-    else:
-        os.makedirs(target_dir)
-        print(f"{target_dir} was created.")
-
-    for i, image in enumerate(image_list):
-        _, file_extension = os.path.splitext(image)
-        file_name = prefix + '-' + ('%04d' % i) + file_extension
-        new_name = os.path.join(target_dir, file_name)
-        # print(image)
-        # print(new_name)
-        try:
-            shutil.copy(image, new_name)
-        except shutil.SameFileError:
-            print(f"{new_name} already exists when paste, continue.")
-
-
 def abs_path(rela_path):
     absolute_path = os.path.join(os.path.dirname(__file__), rela_path)
     return absolute_path
+
+
+def copy_paste_rename(input_dir, target_dir, keep_every_n=1, rename=False, prefix=''):
+    """
+    Copy and paste files from input_dir to target_dir at every n image, and rename them sequentially if wanted.
+    :param input_dir: relative path to input directory
+    :param target_dir: relative path to target directory
+    :param rename: whether to rename files
+    :param keep_every_n: keep every n image
+    :param prefix: prefix to add to the file name if rename is True
+    :return:
+    """
+    # get absolute paths for input and target directories
+    input_dir_abs = abs_path(input_dir)
+    target_dir_abs = abs_path(target_dir)
+
+    # check if input directory exists
+    if not os.path.exists(input_dir_abs):
+        print(f"{input_dir_abs} does not exist!")
+        return
+
+    # check if target directory exists, make it if not
+    if os.path.exists(target_dir_abs):
+        print(f"{target_dir_abs} already exists.")
+    else:
+        os.makedirs(target_dir_abs)
+        print(f"{target_dir_abs} was created.")
+
+    # get all files in input directory
+    image_list = []
+    get_filelist(input_dir_abs, image_list)
+
+    # copy, paste and rename images at every n image
+    for i, image_path in tqdm(enumerate(image_list)):
+        if i % keep_every_n == 0:
+            if rename:
+                _, file_extension = os.path.splitext(image_path)
+                file_name = prefix + '-' + ('%04d' % i) + file_extension
+                new_path = os.path.join(target_dir_abs, file_name)
+            else:
+                new_path = os.path.join(target_dir_abs, os.path.basename(image_path))
+
+            # copy and paste image
+            try:
+                shutil.copy(image_path, new_path)
+            except shutil.SameFileError:
+                print(f"{new_path} already exists when paste, continue.")
+
+    print(f"Copy, paste and rename finished for {len(image_list)} images.")
 
 
 def binarize_masks(mask_dir, target_dir='', water_rgb=None):
@@ -227,4 +254,12 @@ if __name__ == '__main__':
     # binarize_masks
     # '../../Deep-Learning-Data/11_rivers_dataset/annotations'
     #### example usage 2 ####
+
+    #### example usage 3 ####
+    # python convert_images.py
+    # copy_paste_rename
+    # '../../Lantern-Pole-Data/all_dataset/images'
+    # '../../Lantern-Pole-Data/curated_dataset/images'
+    # 8
+    #### example usage 3 ####
 
