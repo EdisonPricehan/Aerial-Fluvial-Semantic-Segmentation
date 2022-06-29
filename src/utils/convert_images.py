@@ -81,7 +81,7 @@ def abs_path(rela_path):
 
 def binarize_masks(mask_dir, target_dir='', water_rgb=None):
     """
-    Binarize multi-class RGB masks to binary masks (o as non-water and 255 as water)
+    Binarize multi-class RGB masks to binary masks (0 as non-water and 255 as water)
     :param mask_dir: relative path to rgb masks directory
     :param target_dir: relative path to binary masks directory
     :param water_rgb: rgb list of water pixel
@@ -210,11 +210,15 @@ if __name__ == '__main__':
     fire.Fire()
 
     #### example usage 1 ####
-
     # python convert_images.py
     # tiff2png
     # '../../WabashRiverAerial-Data/wabash_dataset/test_1_masks'
     # '../../WabashRiverAerial-Data/wabash_dataset/test_png_masks'
-
     #### example usage 1 ####
+
+    #### example usage 2 ####
+    # python convert_images.py
+    # binarize_masks
+    # '../../Deep-Learning-Data/11_rivers_dataset/annotations'
+    #### example usage 2 ####
 
