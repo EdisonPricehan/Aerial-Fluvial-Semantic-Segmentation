@@ -246,11 +246,11 @@ if __name__ == '__main__':
     # 'dataset.csv'
     #### example usage 2 of build_csv_from_datasets ####
 
-    #### example usage 1 of build_statistics_from_datasets ####
+    #### example usage 3 of build_statistics_from_datasets ####
     # python build_dataset.py
     # build_statistics_from_datasets
     # "['../dataset/WabashRiver-Data/dataset_rgb.csv',
     # '../dataset/WildcatCreek-Data/dataset_rgb.csv',
     # '../dataset/Bridges/dataset_4bridges_rgb.csv']"
     # '../dataset/Wabash-Wildcat/statistics.csv'
-    #### example usage 1 of build_statistics_from_datasets ####
+    #### example usage 3 of build_statistics_from_datasets ####
