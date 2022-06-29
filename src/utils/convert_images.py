@@ -169,6 +169,12 @@ def scale_masks_to_visualize(mask_dir, output_dir):
 
 
 def tiff2png(input_dir, output_dir):
+    """
+    Convert tiff images to png images
+    :param input_dir: relative path to tiff images directory
+    :param output_dir: relative path to png images directory
+    :return:
+    """
     input_dir = abs_path(input_dir)
     output_dir = abs_path(output_dir)
     if not os.path.exists(output_dir):
