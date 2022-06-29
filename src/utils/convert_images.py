@@ -117,6 +117,7 @@ def binarize_masks(mask_dir, target_dir='', water_rgb=None):
     # set default water RGB if not given
     if water_rgb is None:
         water_rgb = water_rgb_aerial
+    print(f"Water RGB: {water_rgb}")
 
     # set absolute paths for input and output directories
     mask_dir = abs_path(mask_dir)
@@ -146,13 +147,14 @@ def binarize_masks(mask_dir, target_dir='', water_rgb=None):
         print(f"{target_dir} was created.")
 
     # binarize masks
-    for mask_path in mask_list:
+    for mask_path in tqdm(mask_list):
         mask = cv2.imread(mask_path)
         mask = cv2.cvtColor(mask, cv2.COLOR_BGR2RGB)
+
         # make water 255, non-water 0
-        water_mask = ((mask[:, :, 0] == water_rgb[0]) &
-                      (mask[:, :, 1] == water_rgb[1]) &
-                      (mask[:, :, 2] == water_rgb[2])).astype(np.uint8)
+        water_mask = np.array((mask[:, :, 0] == water_rgb[0]) &
+                              (mask[:, :, 1] == water_rgb[1]) &
+                              (mask[:, :, 2] == water_rgb[2])).astype(np.uint8)
         water_mask *= 255
 
         # save binary mask to the desired target directory
@@ -257,9 +259,17 @@ if __name__ == '__main__':
 
     #### example usage 3 ####
     # python convert_images.py
+    # binarize_masks
+    # '../../Lantern-Pole-Data/curated_dataset/annotations'
+    # '../../Lantern-Pole-Data/curated_dataset/annotations_binary'
+    # [128, 0, 0]
+    #### example usage 3 ####
+
+    #### example usage 4 ####
+    # python convert_images.py
     # copy_paste_rename
     # '../../Lantern-Pole-Data/all_dataset/images'
     # '../../Lantern-Pole-Data/curated_dataset/images'
     # 8
-    #### example usage 3 ####
+    #### example usage 4 ####
 
