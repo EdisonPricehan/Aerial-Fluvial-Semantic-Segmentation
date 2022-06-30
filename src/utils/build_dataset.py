@@ -7,8 +7,6 @@ import fire
 import cv2
 from tqdm import tqdm
 
-from constants import *
-
 
 def train_test_split(csv_file, test_ratio, seed=42):
     """
@@ -161,6 +159,9 @@ def build_statistics_from_datasets(dataset_list, output_path):
     :param dataset_list: list of relative paths to all dataset csv files that are interested
     :return:
     """
+    from constants import water_rgb_aerial, vegetation_rgb, dry_sediment_rgb, sky_rgb, self_rgb, wood_in_river_rgb, \
+        boat_rgb, bridge_rgb
+
     # Validity check
     dataset_num = len(dataset_list)
     if dataset_num == 0:
