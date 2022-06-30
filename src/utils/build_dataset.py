@@ -214,6 +214,35 @@ def build_statistics_from_datasets(dataset_list, output_path):
     print("Statistics csv file building finished!")
 
 
+def check_dataset_validity(dataset_csv_path):
+    """
+    Check the validity of the dataset before training
+    Make sure all image-mask pairs exist, and all images are rgb
+    :param dataset_csv_path: relative path to the dataset csv file
+    :return:
+    """
+    from torchvision.io import read_image
+
+    # get absolute path
+    dataset_csv_path_abs = os.path.join(os.path.dirname(__file__), dataset_csv_path)
+    assert os.path.exists(dataset_csv_path_abs), "Dataset csv file does not exist!"
+
+    # read image-mask pairs from the csv file
+    image_mask_list = get_dataset_list(dataset_csv_path)
+    print(f"Checking validity of {len(image_mask_list)} image-mask pairs from {dataset_csv_path_abs} ...")
+
+    # loop over each image-mask pair and check several criteria
+    for image_mask_path in tqdm(image_mask_list):
+        assert os.path.exists(image_mask_path[0]), "Image does not exist!"
+        assert os.path.exists(image_mask_path[1]), "Mask does not exist!"
+        image = read_image(image_mask_path[0])
+        mask = read_image(image_mask_path[1])
+        assert image.shape[0] == 3, f"{image_mask_path[0]} is not rgb!"
+        assert image.shape[1:] == mask.shape[-2:], f"{image_mask_path[0]} and its mask are not the same size!"
+
+    print(f"{dataset_csv_path_abs} dataset validity check passed!")
+
+
 if __name__ == '__main__':
     fire.Fire()
 
@@ -255,3 +284,9 @@ if __name__ == '__main__':
     # '../dataset/Bridges/dataset_4bridges_rgb.csv']"
     # '../dataset/Wabash-Wildcat/statistics.csv'
     #### example usage 3 of build_statistics_from_datasets ####
+
+    #### example usage 4 of check_dataset_validity ####
+    # python build_dataset.py
+    # check_dataset_validity
+    # '../dataset/3-datasets-baseline/train.csv'
+    #### example usage 4 of check_dataset_validity ####
