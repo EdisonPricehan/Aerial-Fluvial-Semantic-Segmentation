@@ -8,37 +8,65 @@ import cv2
 from tqdm import tqdm
 
 
-def train_test_split(csv_file, test_ratio, seed=42):
+def train_valid_test_split(csv_file, test_ratio, valid_ratio=0, seed=42):
     """
-    split train and test filepaths as separate csv files
+    split train, validation and test filepaths as separate csv files
     :param csv_file: csv file of all (image, mask) pairs to be split
     :param test_ratio: ratio of test set
+    :param valid_ratio: ratio of validation set
     :param seed: some fixed integer to allow repeatability
     :return:
     """
-    output_dir = os.path.dirname(csv_file)
+    # check args validity
+    if test_ratio + valid_ratio > 1.0 or test_ratio < 0.0 or valid_ratio < 0.0:
+        print("Invalid test/validation ratio!")
+        return
+
+    # get absolute path and target directory
+    csv_file_abs = os.path.join(os.path.dirname(__file__), csv_file)
+    output_dir = os.path.dirname(csv_file_abs)
 
     # train and test csv files will be stored in the same directory with the dataset csv file
     train_file = os.path.join(output_dir, 'train.csv')
+    valid_file = os.path.join(output_dir, 'valid.csv')
     test_file = os.path.join(output_dir, 'test.csv')
 
     # read image pairs from csv file, get subset as list
-    with open(csv_file, 'r') as f:
+    with open(csv_file_abs, 'r') as f:
         reader = csv.reader(f)
         reader_list = list(reader)
         line_num = len(reader_list)
-        print(line_num)
+        print(f"Splitting {line_num} data into train, valid and test sets ...")
         np.random.seed(seed)
-        test_indices = np.random.choice(range(line_num), np.floor(test_ratio * line_num).astype(int))
-        train_indices = list(set(range(line_num)).difference(set(test_indices)))
-        # print(test_indices)
+        remaining_indices = range(line_num)
+        test_indices = np.random.choice(remaining_indices, np.floor(test_ratio * line_num).astype(int), replace=False)
+        remaining_indices = list(set(remaining_indices).difference(set(test_indices)))
+        valid_indices = np.random.choice(remaining_indices, np.floor(valid_ratio * line_num).astype(int), replace=False)
+        train_indices = list(set(remaining_indices).difference(set(valid_indices)))
+
+        # validity check
+        assert len(test_indices) + len(valid_indices) + len(train_indices) == line_num, \
+            f"Overflow after splitting! test {len(test_indices)}, valid {len(valid_indices)}, train {len(train_indices)}"
+        assert set(train_indices).isdisjoint(set(test_indices)), \
+               f"Test and train indices overlap! {list(set(test_indices).intersection(set(train_indices)))}"
+        assert set(test_indices).isdisjoint(set(valid_indices)), \
+               f"Test and valid indices overlap! {list(set(test_indices).intersection(set(valid_indices)))}"
+        assert set(valid_indices).isdisjoint(set(train_indices)), \
+               f"Valid and train indices overlap! {list(set(valid_indices).intersection(set(train_indices)))}"
+
+        # form csv lines as list for each set
         test_image_mask_list = [reader_list[i] for i in test_indices]
+        valid_image_mask_list = [reader_list[i] for i in valid_indices]
         train_image_mask_list = [reader_list[i] for i in train_indices]
 
-    # write subset of train and test to its csv file
+    # write subset of train, validation and test to its csv file
     with open(train_file, 'w', newline='') as f:
         writer = csv.writer(f)
         for line in train_image_mask_list:
+            writer.writerow(line)
+    with open(valid_file, 'w', newline='') as f:
+        writer = csv.writer(f)
+        for line in valid_image_mask_list:
             writer.writerow(line)
     with open(test_file, 'w', newline='') as f:
         writer = csv.writer(f)
@@ -49,6 +77,9 @@ def train_test_split(csv_file, test_ratio, seed=42):
 def build_test_set(dataset, trainset, testset):
     """
     Build test set from the given dataset and trainset and store to testset (all relative paths)
+    :param dataset: relative path of the whole dataset csv file
+    :param trainset: relative path of the trainset csv file
+    :param testset: relative path of the testset csv file as output
     """
     dataset_path = os.path.join(os.path.dirname(__file__), dataset)
     trainset_path = os.path.join(os.path.dirname(__file__), trainset)
@@ -290,3 +321,11 @@ if __name__ == '__main__':
     # check_dataset_validity
     # '../dataset/3-datasets-baseline/train.csv'
     #### example usage 4 of check_dataset_validity ####
+
+    #### example usage 5 of train_valid_test_split ####
+    # python build_dataset.py
+    # train_valid_test_split
+    # '../dataset/WildcatCreek-Data/dataset.csv'
+    # 0.4
+    # 0.2
+    #### example usage 5 of train_valid_test_split ####
