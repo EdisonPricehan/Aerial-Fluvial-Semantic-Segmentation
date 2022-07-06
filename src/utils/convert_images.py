@@ -8,7 +8,7 @@ import fire
 from skimage import io
 from tqdm import tqdm
 
-from constants import *
+from .constants import water_rgb_aerial, bridge_rgb, dry_sediment_rgb, vegetation_rgb
 
 
 def get_filelist(dir, Filelist):
