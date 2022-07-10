@@ -189,7 +189,7 @@ class VideoLabelDataset(Dataset):
 if __name__ == '__main__':
     # test for FluvialDataset
     train_dataset_path = '../dataset/3-datasets-baseline/train.csv'
-    valid_dataset_path = '../dataset/3-datasets-baseline/valid.csv'
+    valid_dataset_path = '../dataset/3-datasets-baseline/valid_wabash_wildcat.csv'
     from src.utils.custom_transforms import resize
     training_dataset = FluvialDataset(train_dataset_path, use_augment=True, transform=resize, target_transform=resize)
     valid_dataset = FluvialDataset(valid_dataset_path, use_augment=False, transform=resize, target_transform=resize)

@@ -28,8 +28,8 @@ def train_valid_test_split(csv_file, test_ratio, valid_ratio=0, seed=42):
 
     # train and test csv files will be stored in the same directory with the dataset csv file
     train_file = os.path.join(output_dir, 'train.csv')
-    valid_file = os.path.join(output_dir, 'valid.csv')
-    test_file = os.path.join(output_dir, 'test.csv')
+    valid_file = os.path.join(output_dir, 'valid_wabash_wildcat.csv')
+    test_file = os.path.join(output_dir, 'test_wabash_wildcat.csv')
 
     # read image pairs from csv file, get subset as list
     with open(csv_file_abs, 'r') as f:
