@@ -29,7 +29,7 @@ if __name__ == '__main__':
                         help='Validation batch size override (default: 1)')
     parser.add_argument('-e', '--encoder', type=str, default='resnet34', help='Encoder type')
     parser.add_argument('-d', '--decoder', type=str, default='Unet', help='Decoder type')
-    parser.add_argument('--epochs', type=int, default=50, metavar='N', help='Epochs number')
+    parser.add_argument('--epochs', type=int, default=75, metavar='N', help='Epochs number')
     parser.add_argument('-c', '--out-class-num', type=int, default=1, metavar='N', help='Output class number')
 
     # parse all arguments
@@ -57,8 +57,10 @@ if __name__ == '__main__':
         exit(0)
 
     # init dataset and dataloader
-    training_data = FluvialDataset(train_file_path, use_augment=do_aug, transform=resize, target_transform=resize)
-    valid_data = FluvialDataset(valid_file_path, use_augment=False, transform=resize, target_transform=resize)
+    training_data = FluvialDataset(train_file_path, use_augment=do_aug, transform=resize, target_transform=resize,
+                                   multi_class=True)
+    valid_data = FluvialDataset(valid_file_path, use_augment=False, transform=resize, target_transform=resize,
+                                multi_class=True)
     print(f"Train num: {len(training_data)}")
     print(f"Image size: {training_data[0][0].shape}, mask size: {training_data[0][1].shape}")
     # print(f"Valid size: {len(valid_dataset)}")
@@ -84,11 +86,13 @@ if __name__ == '__main__':
     trainer = pl.Trainer(gpus=1, max_epochs=epochs, logger=wandb_logger, precision=16,
                          callbacks=[checkpoint_callback, early_stop_callback])
 
-    # start training
     print("Start training ...")
+    # start training, uncomment ckpt_path arg if want to load model for continue training
     trainer.fit(
         model,
         train_dataloaders=train_dataloader,
         val_dataloaders=val_dataloader,
+        # ckpt_path=os.path.join(os.path.dirname(__file__), '../logs/baseline/1l3asb8s/checkpoints/epoch=4-step=1125.ckpt')
     )
+
     print("Training finished!")
