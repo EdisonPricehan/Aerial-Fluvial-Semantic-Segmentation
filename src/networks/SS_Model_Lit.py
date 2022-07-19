@@ -18,7 +18,8 @@ class SSModelGeneric(pl.LightningModule):
         self.register_buffer("mean", torch.tensor(params["mean"]).view(1, 3, 1, 1))
 
         # for image segmentation dice loss could be the best first choice
-        self.loss_fn = smp.losses.DiceLoss(smp.losses.BINARY_MODE, from_logits=True)
+        self.loss_fn = smp.losses.DiceLoss(smp.losses.BINARY_MODE if out_classes == 1 else smp.losses.MULTICLASS_MODE,
+                                           from_logits=True)
 
         # use gpu for all
         self._device = torch.device("cuda")
@@ -107,19 +108,24 @@ class SSModelGeneric(pl.LightningModule):
             f"{stage}_dataset_f1": f1_score,
             f"{stage}_dataset_accuracy": accu
         }
-        self.logger.log_metrics(metrics)
+
+        if self.logger:
+            self.logger.log_metrics(metrics)
+            if stage == "valid":
+                self.log("valid_dataset_f1", f1_score)
 
         # log images and masks for testing stage
-        if stage == "test":
+        if stage == "test" and self.logger:
             columns = ['id', 'image', 'gt_mask', 'pred_mask', 'iou', 'f1', 'pa']
             data = [[idx,
                      wandb.Image(x['image'].cpu()),
                      wandb.Image(x['gt'].cpu()),
                      wandb.Image(x['pred'].cpu()),
-                     smp.metrics.iou_score(x["tp"], x["fp"], x["fn"], x["tn"]).item(),
-                     smp.metrics.f1_score(x["tp"], x["fp"], x["fn"], x["tn"]).item(),
-                     smp.metrics.accuracy(x["tp"], x["fp"], x["fn"], x["tn"]).item()] for idx, x in enumerate(outputs)]
-            self.logger.log_table(key="samples", columns=columns, data=data)
+                     smp.metrics.iou_score(x["tp"], x["fp"], x["fn"], x["tn"], reduction="micro-imagewise").item(),
+                     smp.metrics.f1_score(x["tp"], x["fp"], x["fn"], x["tn"], reduction="micro").item(),
+                     smp.metrics.accuracy(x["tp"], x["fp"], x["fn"], x["tn"], reduction="micro").item()]
+                    for idx, x in enumerate(outputs)]
+            self.logger.log_table(key="test results", columns=columns, data=data)
 
     def training_step(self, batch, batch_idx):
         return self.shared_step(batch, "train")
