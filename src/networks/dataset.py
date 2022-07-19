@@ -12,7 +12,7 @@ from src.utils.convert_images import abs_path
 
 
 class FluvialDataset(Dataset):
-    def __init__(self, dataset_path, use_augment=True, transform=None, target_transform=None):
+    def __init__(self, dataset_path, use_augment=True, transform=None, target_transform=None, multi_class=False):
         """
         Custom dataset class
         :param dataset_path: relative path of target dataset csv file in src/dataset/
@@ -42,6 +42,7 @@ class FluvialDataset(Dataset):
         # print(self.mask_files)
         self.transform = transform
         self.target_transform = target_transform
+        self.multi_class = multi_class
 
     def __len__(self):
         """
@@ -80,7 +81,7 @@ class FluvialDataset(Dataset):
             mask = self.target_transform(mask)
 
             # convert 3-channel gray mask to 1-channel mask
-            if mask.shape[0] == 3:
+            if mask.shape[0] == 3 and not self.multi_class:
                 mask = T.Grayscale(num_output_channels=1)(mask)
 
             mask = mask.squeeze()  # remove redundant dimension
