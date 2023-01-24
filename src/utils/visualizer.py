@@ -1,6 +1,11 @@
 #!E:\anaconda/python
 
 import matplotlib.pyplot as plt
+import matplotlib.image as mpimg
+import plotly.express as px
+import plotly.graph_objs as go
+import pandas as pd
+import seaborn as sns
 from matplotlib.ticker import PercentFormatter
 from skimage.color import label2rgb
 import os
@@ -212,8 +217,59 @@ def histogram_pixel(statistics_path, save_fig=True):
         plt.show()
 
 
+def add_axis_names(image_path: str):
+    assert image_path != '', "Image path is empty!"
+
+    img = mpimg.imread(image_path)
+    print(type(img))
+    print(img.shape)
+    h, w, _ = img.shape
+
+    plt.imshow(img)
+    plt.axis('off')
+
+    plt.text(w * 0.48, h * 0.99, 'Epoch', fontsize=10, color='gray', weight='bold')
+    plt.text(w * 0.02, h * 0.75, 'Validation F1 Score', fontsize=10, rotation='vertical', color='gray', weight='bold')
+
+    # plt.show()
+    plt.savefig(os.path.dirname(image_path) + '/new.png', bbox_inches="tight", dpi=300)
+
+
+def double_sided_bars(csv_file_path: str):
+    df = pd.read_csv(csv_file_path)
+    print(df)
+
+    # sns.barplot(data=df, x='arch', y="Params Mb", hue='encoder_name')
+
+    plt.rcParams["font.weight"] = "bold"
+    plt.rcParams["font.size"] = 15
+    plt.rcParams["axes.labelweight"] = "bold"
+    fig, axes = plt.subplots(figsize=(10, 5), ncols=2, sharey=True)
+
+    colors = ['red'] * 3 + ['green'] * 3 + ['blue'] * 4
+
+    axes[0].barh(df['Name'], df['Params Mb'], align='center', color=colors, zorder=10)
+    axes[0].set_title('Params Mb', fontsize=18, pad=15)
+    axes[1].barh(df['Name'], df['GFLOPs'], align='center', color=colors, zorder=10)
+    axes[1].set_title('GFLOPs', fontsize=18, pad=15)
+
+    # axes[0].barh(df['Name'], df['F1 Score'], align='center', color=colors, zorder=10)
+    # axes[0].set_title('F1 Score', fontsize=18, pad=15)
+    # axes[0].set_xlim([0.98, 0.99])
+    # axes[1].barh(df['Name'], df['mIOU'], align='center', color=colors, zorder=10)
+    # axes[1].set_title('mIOU', fontsize=18, pad=15)
+    # axes[1].set_xlim([0.95, 0.96])
+
+    axes[0].invert_xaxis()
+
+    fig.tight_layout()
+
+    # plt.show()
+    fig.savefig('bar_params.png', bbox_inches="tight", dpi=300)
+
+
 if __name__ == '__main__':
-    fire.Fire()
+    # fire.Fire()
 
     #### example usage 1 ####
     # python visualizer.py
@@ -226,3 +282,12 @@ if __name__ == '__main__':
     # pie_chart_pixel
     # '../dataset/Wabash-Wildcat/statistics.csv'
     #### example usage 2 ####
+
+    # img_path = '../images/wandb/arch-merge.png'
+    # img_path = '../images/wandb/encoder-merge.png'
+    # add_axis_names(img_path)
+
+    csv_file = 'wandb_multicolumn.csv'
+    double_sided_bars(csv_file)
+
+
