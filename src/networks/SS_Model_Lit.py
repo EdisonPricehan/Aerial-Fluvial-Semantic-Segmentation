@@ -103,16 +103,16 @@ class SSModelGeneric(pl.LightningModule):
         accu = smp.metrics.accuracy(tp, fp, fn, tn, reduction="micro")
 
         metrics = {
-            f"{stage}_per_image_iou": per_image_iou,
-            f"{stage}_dataset_iou": dataset_iou,
-            f"{stage}_dataset_f1": f1_score,
-            f"{stage}_dataset_accuracy": accu
+            f"{stage}_per_image_iou": per_image_iou.float(),
+            f"{stage}_dataset_iou": dataset_iou.float(),
+            f"{stage}_dataset_f1": f1_score.float(),
+            f"{stage}_dataset_accuracy": accu.float()
         }
 
         if self.logger:
             self.logger.log_metrics(metrics)
             if stage == "valid":
-                self.log("valid_dataset_f1", f1_score)
+                self.log("valid_dataset_f1", f1_score, on_epoch=True)
 
         # log images and masks for testing stage
         if stage == "test" and self.logger:

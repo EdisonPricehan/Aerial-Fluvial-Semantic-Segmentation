@@ -3,7 +3,7 @@
 import argparse
 import os
 from torch.utils.data import DataLoader
-from dataset import FluvialDataset
+from src.networks.dataset import FluvialDataset
 from pprint import pprint
 from src.utils.custom_transforms import resize
 import pytorch_lightning as pl

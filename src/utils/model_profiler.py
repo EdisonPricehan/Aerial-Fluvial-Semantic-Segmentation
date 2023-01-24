@@ -12,7 +12,7 @@ from src.networks.SS_Model_Lit import SSModelGeneric as ssmg
 if __name__ == '__main__':
     # specify the model checkpoint to load
     model_path = os.path.join(os.path.dirname(__file__),
-                              '../logs/baseline/grvlp8b9/checkpoints/epoch=19-step=4500.ckpt')
+                              '../logs/baseline/smquglle/checkpoints/epoch=8-step=2025.ckpt')
     model = ssmg.load_from_checkpoint(checkpoint_path=model_path)
     model.eval()
 

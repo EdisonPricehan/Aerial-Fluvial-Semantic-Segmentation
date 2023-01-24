@@ -10,7 +10,7 @@ from pytorch_lightning.loggers import WandbLogger
 from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 
-from dataset import FluvialDataset
+from src.networks.dataset import FluvialDataset
 from src.utils.custom_transforms import resize
 from SS_Model_Lit import SSModelGeneric as SSMG, check_encoder_existence, check_decoder_existence
 
@@ -58,15 +58,15 @@ if __name__ == '__main__':
 
     # init dataset and dataloader
     training_data = FluvialDataset(train_file_path, use_augment=do_aug, transform=resize, target_transform=resize,
-                                   multi_class=True)
+                                   multi_class=False)
     valid_data = FluvialDataset(valid_file_path, use_augment=False, transform=resize, target_transform=resize,
-                                multi_class=True)
+                                multi_class=False)
     print(f"Train num: {len(training_data)}")
     print(f"Image size: {training_data[0][0].shape}, mask size: {training_data[0][1].shape}")
     # print(f"Valid size: {len(valid_dataset)}")
     print(f"Valid num: {len(valid_data)}")
-    train_dataloader = DataLoader(training_data, batch_size=training_bs, shuffle=True)
-    val_dataloader = DataLoader(valid_data, batch_size=val_bs, shuffle=False)
+    train_dataloader = DataLoader(training_data, batch_size=training_bs, shuffle=True, num_workers=2)
+    val_dataloader = DataLoader(valid_data, batch_size=val_bs, shuffle=False, num_workers=2)
 
     # init wandb logger
     wandb_logger = WandbLogger(project=project_name, name='-'.join([decoder, encoder, 'train']),
@@ -83,7 +83,8 @@ if __name__ == '__main__':
 
     # construct desired model
     model = SSMG(arch=decoder, encoder_name=encoder, in_channels=3, out_classes=out_class_num)
-    trainer = pl.Trainer(gpus=1, max_epochs=epochs, logger=wandb_logger, precision=16,
+    trainer = pl.Trainer(gpus=1, max_epochs=epochs, logger=wandb_logger, precision=16, enable_progress_bar=True,
+                         deterministic=True, log_every_n_steps=10,
                          callbacks=[checkpoint_callback, early_stop_callback])
 
     print("Start training ...")
@@ -92,7 +93,7 @@ if __name__ == '__main__':
         model,
         train_dataloaders=train_dataloader,
         val_dataloaders=val_dataloader,
-        # ckpt_path=os.path.join(os.path.dirname(__file__), '../logs/baseline/1l3asb8s/checkpoints/epoch=4-step=1125.ckpt')
+        ckpt_path=os.path.join(os.path.dirname(__file__), '../logs/baseline/smquglle/checkpoints/epoch=8-step=2025.ckpt')
     )
 
     print("Training finished!")
