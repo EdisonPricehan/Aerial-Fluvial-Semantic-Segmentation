@@ -51,9 +51,10 @@ if __name__ == '__main__':
     # add_config(run, "GFLOPs", 28.35)
 
     # update config of all runs in the project
-    runs = api.runs("edisonprincehan/baseline_wabash_wildcat")
+    runs = api.runs("edisonprincehan/baseline")
     # update_project_config(runs, "arch", "DeepLabV3Plus", "DLV3P")
     # update_project_config(runs, "encoder_name", "timm-efficientnet-b4", "EfficientNet")
     # update_project_config(runs, "encoder_name", "timm-mobilenetv3_large_100", "MobileNet")
     # update_project_config(runs, "encoder_name", "resnet50", "ResNet")
     # update_project_config(runs, "encoder_name", "xception", "Xception")
+    # update_project_config(runs, "encoder_name", "mit_b1", "MiT")
