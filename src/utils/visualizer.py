@@ -5,8 +5,8 @@ import matplotlib.image as mpimg
 import plotly.express as px
 import plotly.graph_objs as go
 import pandas as pd
-import seaborn as sns
-from matplotlib.ticker import PercentFormatter
+# import seaborn as sns
+from matplotlib.ticker import PercentFormatter, FormatStrFormatter
 from skimage.color import label2rgb
 import os
 import cv2
@@ -246,26 +246,31 @@ def double_sided_bars(csv_file_path: str):
     plt.rcParams["axes.labelweight"] = "bold"
     fig, axes = plt.subplots(figsize=(10, 5), ncols=2, sharey=True)
 
-    colors = ['red'] * 3 + ['green'] * 3 + ['blue'] * 4
+    colors = ['red'] * 3 + ['green'] * 3 + ['blue'] * 5
 
-    axes[0].barh(df['Name'], df['Params Mb'], align='center', color=colors, zorder=10)
-    axes[0].set_title('Params Mb', fontsize=18, pad=15)
-    axes[1].barh(df['Name'], df['GFLOPs'], align='center', color=colors, zorder=10)
-    axes[1].set_title('GFLOPs', fontsize=18, pad=15)
+    # axes[0].barh(df['Name'], df['Params Mb'], align='center', color=colors, zorder=10)
+    # axes[0].set_title('Params Mb', fontsize=18, pad=15)
+    # axes[1].barh(df['Name'], df['GFLOPs'], align='center', color=colors, zorder=10)
+    # axes[1].set_title('GFLOPs', fontsize=18, pad=15)
 
-    # axes[0].barh(df['Name'], df['F1 Score'], align='center', color=colors, zorder=10)
-    # axes[0].set_title('F1 Score', fontsize=18, pad=15)
-    # axes[0].set_xlim([0.98, 0.99])
-    # axes[1].barh(df['Name'], df['mIOU'], align='center', color=colors, zorder=10)
-    # axes[1].set_title('mIOU', fontsize=18, pad=15)
-    # axes[1].set_xlim([0.95, 0.96])
+    axes[0].barh(df['Name'], df['F1 Score'], align='center', color=colors, zorder=10)
+    axes[0].set_title('F1 Score', fontsize=18, pad=15)
+    axes[0].set_xlim([0.98, 0.9875])
+    axes[0].xaxis.set_major_formatter(FormatStrFormatter('%0.3f'))
+    axes[1].barh(df['Name'], df['mIOU'], align='center', color=colors, zorder=10)
+    axes[1].set_title('mIOU', fontsize=18, pad=15)
+    axes[1].set_xlim([0.95, 0.963])
+    axes[1].xaxis.set_major_formatter(FormatStrFormatter('%0.3f'))
 
     axes[0].invert_xaxis()
 
     fig.tight_layout()
 
     # plt.show()
-    fig.savefig('bar_params.png', bbox_inches="tight", dpi=300)
+
+    fig.savefig('bar_metrics.png', bbox_inches="tight", dpi=300)
+
+    # fig.savefig('bar_params.png', bbox_inches="tight", dpi=300)
 
 
 if __name__ == '__main__':
@@ -283,11 +288,11 @@ if __name__ == '__main__':
     # '../dataset/Wabash-Wildcat/statistics.csv'
     #### example usage 2 ####
 
-    # img_path = '../images/wandb/arch-merge.png'
+    img_path = '../images/wandb/arch-merge.png'
     # img_path = '../images/wandb/encoder-merge.png'
-    # add_axis_names(img_path)
+    add_axis_names(img_path)
 
-    csv_file = 'wandb_multicolumn.csv'
-    double_sided_bars(csv_file)
+    # csv_file = 'wandb_multicolumn.csv'
+    # double_sided_bars(csv_file)
 
 
