@@ -246,7 +246,7 @@ def double_sided_bars(csv_file_path: str):
     plt.rcParams["axes.labelweight"] = "bold"
     fig, axes = plt.subplots(figsize=(10, 5), ncols=2, sharey=True)
 
-    colors = ['red'] * 3 + ['green'] * 3 + ['blue'] * 5
+    colors = ['red'] * 4 + ['green'] * 3 + ['blue'] * 5
 
     # axes[0].barh(df['Name'], df['Params Mb'], align='center', color=colors, zorder=10)
     # axes[0].set_title('Params Mb', fontsize=18, pad=15)
@@ -292,6 +292,7 @@ if __name__ == '__main__':
     # img_path = '../images/wandb/encoder-merge.png'
     add_axis_names(img_path)
 
+    # generate bar plot from csv file
     # csv_file = 'wandb_multicolumn.csv'
     # double_sided_bars(csv_file)
 
