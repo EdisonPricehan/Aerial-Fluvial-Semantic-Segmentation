@@ -1,6 +1,7 @@
 
 import os.path as osp
 import torch
+import torch.onnx
 import torchvision
 import torchvision.transforms as TF
 import pytorch_lightning as pl
@@ -12,12 +13,13 @@ from SS_Model_Lit import SSModelGeneric as ssmg
 arch = 'Unet'  # PAN
 encoder = 'mit_b1'
 
-input_image_path = '/home/edison/Research/Aerial-Fluvial-Semantic-Segmentation/afid/WildcatCreekDataset/wildcat_dataset/images/wildcat_forward_0118.jpg'
-output_mask_path = '/home/edison/Research/Aerial-Fluvial-Semantic-Segmentation/src/images/predictions/{}-{}.png'.format(arch, encoder)
+input_image_path = osp.join(osp.dirname(__file__), '../images/AerialFluvialDataset/WildcatCreekDataset/wildcat_dataset/images/wildcat_forward_0118.jpg')
+output_mask_path = osp.join(osp.dirname(__file__), '../images/predictions/{}-{}.png'.format(arch, encoder))
 
-input_checkpoint_path = '/home/edison/Research/Aerial-Fluvial-Semantic-Segmentation/src/models/{}-{}.ckpt'.format(arch, encoder)
-output_pth_path = '/home/edison/Research/Aerial-Fluvial-Semantic-Segmentation/src/models/{}-{}.pth'.format(arch, encoder)
+input_checkpoint_path = osp.join(osp.dirname(__file__), '../models/{}-{}.ckpt'.format(arch, encoder))
+output_pth_path = osp.join(osp.dirname(__file__), '../models/{}-{}.pth'.format(arch, encoder))
 input_pth_path = output_pth_path
+output_onnx_path = osp.join(osp.dirname(__file__), '../models/{}-{}.onnx'.format(arch, encoder))
 
 height, width = 320, 544
 
@@ -25,13 +27,13 @@ device = torch.device('cuda')
 
 
 def print_config():
-    print(f'{input_image_path=}')
-    print(f'{output_mask_path}')
-    print(f'{arch=}')
-    print(f'{encoder=}')
-    print(f'{input_checkpoint_path=}')
-    print(f'{input_pth_path=}')
-    print(f'{height=} {width=}')
+    print('input_image_path: {}'.format(input_image_path))
+    print('output_mask_path: {}'.format(output_mask_path))
+    print('arch: {}'.format(arch))
+    print('encoder: {}'.format(encoder))
+    print('input_checkpoint_path: {}'.format(input_checkpoint_path))
+    print('input_pth_path: {}'.format(input_pth_path))
+    print('height: {} width: {}'.format(height, width))
 
 
 if __name__ == '__main__':
@@ -45,7 +47,7 @@ if __name__ == '__main__':
         TF.ConvertImageDtype(torch.float),
     ])
 
-    img = transform(img).to('cuda')
+    img = transform(img).to(device)
     print('Loaded image size: {}'.format(img.shape))
 
     '''
@@ -69,14 +71,24 @@ if __name__ == '__main__':
     # print('Hyper parameters: {}'.format(checkpoint['hyper_parameters']))
     # print('Checkpoint keys: {}'.format(checkpoint.keys()))
 
-    model.eval()
-    logits_mask = model(img)
-    prob_mask = logits_mask.sigmoid()
-    pred_mask = ((prob_mask > 0.5).float() * 255).to(torch.uint8).squeeze(0).to('cpu')
-    print('Pred mask shape: {}'.format(pred_mask.shape))
-    print('Inference finished!')
-    torchvision.io.write_png(pred_mask, output_mask_path)
-    print('Inferred mask saved!')
+    '''
+    Export to ONNX model
+    '''
+    torch.onnx.export(model, img, output_onnx_path, verbose=False)
+    print('ONNX model exported!')
+
+    '''
+    Start inference
+    '''
+#    model.eval()
+#    with torch.no_grad():
+#        logits_mask = model(img)
+#        prob_mask = logits_mask.sigmoid()
+#        pred_mask = ((prob_mask > 0.5).float() * 255).to(torch.uint8).squeeze(0).to('cpu')
+#        print('Pred mask shape: {}'.format(pred_mask.shape))
+#        print('Inference finished!')
+#        torchvision.io.write_png(pred_mask, output_mask_path)
+#        print('Inferred mask saved!')
 
     # torch.save(model.state_dict(), output_pth_path)
     # print('Pth model saved!')
