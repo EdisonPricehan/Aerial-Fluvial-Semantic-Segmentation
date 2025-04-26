@@ -5,7 +5,7 @@ import torch.onnx
 import onnx
 import onnxruntime
 
-from src.networks.SS_Model_Lit import SSModelGeneric as SS_Model
+from src.networks.model import LitSegModel as SS_Model
 
 
 def ckpt2onnx(ckpt_path, onnx_path, input_shape=(1, 3, 320, 544)):

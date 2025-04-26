@@ -1,26 +1,43 @@
 #!E:\anaconda/python
 
 import os
+import numpy as np
+import torch
 import pandas as pd
+from typing import List, Tuple, Callable
 
 from torch.utils.data import Dataset
 from torchvision.io import read_image
 import torchvision.transforms as T
 
-from src.utils.build_dataset import get_dataset_list
-from src.utils.convert_images import abs_path
+from utils.build_dataset import get_dataset_list
+from utils.convert_images import abs_path
 
 
 class FluvialDataset(Dataset):
-    def __init__(self, dataset_path, use_augment=True, transform=None, target_transform=None, multi_class=False):
+    def __init__(
+            self,
+            dataset_path: str,
+            use_augment: bool = False,
+            multi_class: bool = False,
+            transform=None,
+            target_transform=None,
+    ):
         """
-        Custom dataset class
-        :param dataset_path: relative path of target dataset csv file in src/dataset/
-        :param transform: original image transform
-        :param target_transform: mask image transform
+        Custom dataset class.
+
+        Args:
+            dataset_path: Relative path of target dataset csv file in src/dataset/
+            use_augment: Whether augment the dataset.
+            multi_class: Whether the mask is multi class or binary.
+            transform: Transform to the image.
+            target_transform: Transform to the mask.
         """
         super(FluvialDataset, self).__init__()
+
         dataset_file = abs_path(dataset_path)
+        assert os.path.exists(dataset_file), f'{dataset_file} does not exist!'
+
         dataset_list = get_dataset_list(dataset_file)
 
         # read augmented training set
@@ -44,7 +61,7 @@ class FluvialDataset(Dataset):
         self.target_transform = target_transform
         self.multi_class = multi_class
 
-    def __len__(self):
+    def __len__(self) -> int:
         """
         This function returns the length of the dataset (number of images present used for training)
         Input:
@@ -54,7 +71,7 @@ class FluvialDataset(Dataset):
         """
         return len(self.img_files)
 
-    def __getitem__(self, idx):
+    def __getitem__(self, idx: int) -> Tuple[np.ndarray | torch.Tensor, np.ndarray | torch.Tensor]:
         """
         This function of the dataset class returns an item from the dataset. It will in fact return an image from
         the dataset and its corresponding label or segmented image.
@@ -72,7 +89,7 @@ class FluvialDataset(Dataset):
         image = read_image(img_path)
         mask = read_image(mask_path)
 
-        # apply transforms
+        # Apply transforms
         if self.transform:
             image = self.transform(image)
             image = image / 255

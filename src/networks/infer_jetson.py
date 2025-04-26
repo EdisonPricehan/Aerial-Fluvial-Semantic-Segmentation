@@ -8,7 +8,7 @@ import torchvision.transforms as TF
 import pytorch_lightning as pl
 from PIL import Image
 import segmentation_models_pytorch as smp
-from SS_Model_Lit import SSModelGeneric as ssmg
+from model import LitSegModel as ssmg
 
 # CUDA & TensorRT
 # import pycuda.driver as cuda
@@ -40,7 +40,7 @@ output_onnx_path = osp.join(osp.dirname(__file__), '../models/{}-{}.onnx'.format
 input_onnx_path = output_onnx_path
 output_trt_path = osp.join(osp.dirname(__file__), '../models/{}-{}.trt'.format(arch, encoder))
 
-height, width = 320, 544
+height, width = 320, 544  # TODO
 
 device = torch.device('cuda')
 

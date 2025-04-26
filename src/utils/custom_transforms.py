@@ -1,27 +1,58 @@
 #!E:\anaconda/python
 
-import torchvision.transforms.functional as F
+import torch
+from torchvision.transforms import Resize
+
 import os
+from typing import Callable, Literal, Dict, Tuple, List, get_args
 
 
-def resize(image_tensor, h=320, w=544):
-    # print(f"Original shape: {image_tensor.shape}")
-    new_image_tensor = F.resize(image_tensor, size=[h, w])
-    # print(f"Resized shape: {new_image_tensor.shape}")
-    return new_image_tensor
+# Define types
+RESIZE_TRANSFORM = Callable[[torch.Tensor], torch.Tensor]
+RESOLUTIONS = Literal['low', 'medium', 'high']
+
+# Define static mapping
+resolution_mapping: Dict[str, Tuple[int, int]] = {
+    'low': (128, 128),
+    'medium': (320, 544),
+    'high': (1080, 1920),
+}
+
+
+def supported_resolution_strings() -> Tuple[str]:
+    return get_args(RESOLUTIONS)
+
+
+def supported_resolutions() -> List[Tuple[int, int]]:
+    return list(resolution_mapping.values())
+
+
+def get_transform_by_resolution(h: int, w: int) -> RESIZE_TRANSFORM:
+    return Resize((h, w))
+
+
+def get_transform_by_resolution_level(res_level: RESOLUTIONS = 'medium') -> RESIZE_TRANSFORM:
+    assert res_level in resolution_mapping.keys(), f'{res_level} is not supported. Acceptable resolution levels: {supported_resolution_strings()}.'
+
+    h, w = resolution_mapping[res_level]
+    return get_transform_by_resolution(h, w)
 
 
 if __name__ == '__main__':
-    from src.networks.dataset import FluvialDataset
-    dataset_dir = os.path.join(os.path.dirname(__file__), '../dataset/WildcatCreek-Data')
-    training_dataset = FluvialDataset(dataset_dir, train=True)
+    from networks.dataset import FluvialDataset
+    import visualizer
+
+    dataset_dir = os.path.join(os.path.dirname(__file__), '../dataset/afid/dataset.csv')
+
+    # Change resolution based on the project
+    resize_transform = get_transform_by_resolution_level('medium')
+    # resize_transform = get_transform_by_resolution_level('low')
+    # resize_transform = get_transform_by_resolution_level('high')
+
+    training_dataset = FluvialDataset(dataset_dir, transform=resize_transform, target_transform=resize_transform)
     print(len(training_dataset))
+
     img, mask = training_dataset[0]  # plot the first training data pair
-    small_edge_len = 300
-    resized_img = resize(img, small_edge_len)
-    resized_mask = resize(mask, small_edge_len)
 
     # plot the images
-    import visualizer
-    # visualizer.plot_img_and_mask(img.permute(1, 2, 0), mask.squeeze())
-    visualizer.plot_img_and_mask(resized_img.permute(1, 2, 0), resized_mask.squeeze())
+    visualizer.plot_img_and_mask(img.permute(1, 2, 0), mask.squeeze())

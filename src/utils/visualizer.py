@@ -2,10 +2,7 @@
 
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
-import plotly.express as px
-import plotly.graph_objs as go
 import pandas as pd
-# import seaborn as sns
 from matplotlib.ticker import PercentFormatter, FormatStrFormatter
 from skimage.color import label2rgb
 import os
@@ -29,6 +26,7 @@ def plot_img_and_mask(img, mask):
         ax[1].set_title(f'Output mask')
         ax[1].imshow(mask)
     plt.xticks([]), plt.yticks([])
+    plt.tight_layout()
     plt.show()
 
 

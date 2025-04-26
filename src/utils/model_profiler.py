@@ -6,7 +6,7 @@ import time
 from tqdm import tqdm
 from fvcore.nn import FlopCountAnalysis, flop_count_table
 
-from src.networks.SS_Model_Lit import SSModelGeneric as ssmg
+from src.networks.model import LitSegModel as ssmg
 
 
 if __name__ == '__main__':

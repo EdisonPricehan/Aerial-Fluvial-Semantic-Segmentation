@@ -6,6 +6,7 @@ import numpy as np
 import fire
 import cv2
 from tqdm import tqdm
+from typing import List
 
 
 def train_valid_test_split(csv_file, test_ratio, valid_ratio=0, seed=42):
@@ -28,8 +29,8 @@ def train_valid_test_split(csv_file, test_ratio, valid_ratio=0, seed=42):
 
     # train and test csv files will be stored in the same directory with the dataset csv file
     train_file = os.path.join(output_dir, 'train.csv')
-    valid_file = os.path.join(output_dir, 'valid_wabash_wildcat.csv')
-    test_file = os.path.join(output_dir, 'test_wabash_wildcat.csv')
+    valid_file = os.path.join(output_dir, 'valid.csv')
+    test_file = os.path.join(output_dir, 'test.csv')
 
     # read image pairs from csv file, get subset as list
     with open(csv_file_abs, 'r') as f:
@@ -64,14 +65,16 @@ def train_valid_test_split(csv_file, test_ratio, valid_ratio=0, seed=42):
         writer = csv.writer(f)
         for line in train_image_mask_list:
             writer.writerow(line)
-    with open(valid_file, 'w', newline='') as f:
-        writer = csv.writer(f)
-        for line in valid_image_mask_list:
-            writer.writerow(line)
-    with open(test_file, 'w', newline='') as f:
-        writer = csv.writer(f)
-        for line in test_image_mask_list:
-            writer.writerow(line)
+    if valid_ratio > 0:
+        with open(valid_file, 'w', newline='') as f:
+            writer = csv.writer(f)
+            for line in valid_image_mask_list:
+                writer.writerow(line)
+    if test_ratio > 0:
+        with open(test_file, 'w', newline='') as f:
+            writer = csv.writer(f)
+            for line in test_image_mask_list:
+                writer.writerow(line)
 
 
 def build_test_set(dataset, trainset, testset):
@@ -110,15 +113,19 @@ def build_test_set(dataset, trainset, testset):
     print("Testset csv built!")
 
 
-def get_dataset_list(filename=''):
+def get_dataset_list(filename: str = '') -> List[List[str]]:
     """
-    get list of (image, mask) tuple from csv file
+    Get list of (image, mask) path tuple from csv file.
+
     :param filename: absolute path of csv file
+
     :return: [(image, mask)]
     """
     if filename == '':
         print("Need to specify which csv file to read!")
         return []
+
+    assert os.path.exists(filename), f'{filename} does not exist.'
 
     with open(filename, 'r') as f:
         reader = csv.reader(f)
@@ -176,7 +183,7 @@ def build_csv_from_datasets(dataset_dir_list,
         # append to the csv file
         with open(output_filepath, 'a', newline='') as f:
             writer = csv.writer(f)
-            for image_name, mask_name in zip(os.listdir(image_dir_abs), os.listdir(mask_dir_abs)):
+            for image_name, mask_name in zip(sorted(os.listdir(image_dir_abs)), sorted(os.listdir(mask_dir_abs))):
                 # print(f"{image_name=} {mask_name=}")
                 writer.writerow([os.path.join(image_dir_abs, image_name), os.path.join(mask_dir_abs, mask_name)])
 
@@ -245,10 +252,10 @@ def build_statistics_from_datasets(dataset_list, output_path):
     print("Statistics csv file building finished!")
 
 
-def check_dataset_validity(dataset_csv_path):
+def check_dataset_validity(dataset_csv_path: str):
     """
     Check the validity of the dataset before training
-    Make sure all image-mask pairs exist, and all images are rgb
+    Make sure all image-mask pairs exist, conform, and all images are rgb
     :param dataset_csv_path: relative path to the dataset csv file
     :return:
     """
@@ -266,6 +273,11 @@ def check_dataset_validity(dataset_csv_path):
     for image_mask_path in tqdm(image_mask_list):
         assert os.path.exists(image_mask_path[0]), "Image does not exist!"
         assert os.path.exists(image_mask_path[1]), "Mask does not exist!"
+
+        img_basename: str = os.path.splitext(os.path.basename(image_mask_path[0]))[0]
+        mask_basename: str = os.path.splitext(os.path.basename(image_mask_path[1]))[0]
+        assert img_basename in mask_basename, f'Image-Mask pair does not conform!'
+
         image = read_image(image_mask_path[0])
         mask = read_image(image_mask_path[1])
         assert image.shape[0] == 3, f"{image_mask_path[0]} is not rgb!"
@@ -307,6 +319,18 @@ if __name__ == '__main__':
     # 'dataset.csv'
     #### example usage 2 of build_csv_from_datasets ####
 
+    # build_csv_from_datasets(dataset_dir_list=['../../AerialFluvialDataset/WabashRiverDataset/wabash_dataset',
+    #                                           '../../AerialFluvialDataset/WabashRiverDataset/bridge1_dataset',
+    #                                           '../../AerialFluvialDataset/WildcatCreekDataset/bridge2_dataset',
+    #                                           '../../AerialFluvialDataset/WildcatCreekDataset/bridge3_dataset',
+    #                                           '../../AerialFluvialDataset/WildcatCreekDataset/bridge4_dataset',
+    #                                           '../../AerialFluvialDataset/WildcatCreekDataset/wildcat_dataset'],
+    #                         image_dir='images',
+    #                         mask_dir='annotations_binary',
+    #                         output_dirname='afid',
+    #                         output_filename='dataset.csv',
+    #                         )
+
     #### example usage 3 of build_statistics_from_datasets ####
     # python build_dataset.py
     # build_statistics_from_datasets
@@ -322,6 +346,8 @@ if __name__ == '__main__':
     # '../dataset/3-datasets-baseline/train.csv'
     #### example usage 4 of check_dataset_validity ####
 
+    # check_dataset_validity(dataset_csv_path='../dataset/afid/dataset.csv')
+
     #### example usage 5 of train_valid_test_split ####
     # python build_dataset.py
     # train_valid_test_split
@@ -329,3 +355,9 @@ if __name__ == '__main__':
     # 0.4
     # 0.2
     #### example usage 5 of train_valid_test_split ####
+
+    # train_valid_test_split(
+    #     csv_file='../dataset/afid/dataset.csv',
+    #     test_ratio=0.2,
+    #     valid_ratio=0,
+    # )
