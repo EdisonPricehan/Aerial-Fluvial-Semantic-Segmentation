@@ -4,7 +4,7 @@ import torch
 from torchvision.transforms import Resize
 
 import os
-from typing import Callable, Literal, Dict, Tuple, List, get_args
+from typing import Callable, Literal, Tuple, List, Mapping, get_args
 
 
 # Define types
@@ -12,7 +12,7 @@ RESIZE_TRANSFORM = Callable[[torch.Tensor], torch.Tensor]
 RESOLUTIONS = Literal['low', 'medium', 'high']
 
 # Define static mapping
-resolution_mapping: Dict[str, Tuple[int, int]] = {
+resolution_mapping: Mapping[str, Tuple[int, int]] = {
     'low': (128, 128),
     'medium': (320, 544),
     'high': (1080, 1920),
