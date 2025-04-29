@@ -10,7 +10,7 @@ def dummy_input(res_level: str) -> torch.Tensor:
 
     h, w = resolution_mapping[res_level]
 
-    dummy_image = torch.tensor((1, 3, h, w))
+    dummy_image = torch.zeros((1, 3, h, w))
 
     return dummy_image
 
@@ -48,6 +48,7 @@ def pth2onnx(pth_path: str, onnx_name: str = 'model.onnx') -> None:
 
     # Get dummy input
     dummy_image = dummy_input(res_level='low')
+    assert dummy_image.dim() == 4, f'Dummy input dimension must be 4!'
 
     # Export the model to ONNX format
     target_dir: str = os.path.dirname(pth_path)
@@ -61,7 +62,8 @@ def pth2onnx(pth_path: str, onnx_name: str = 'model.onnx') -> None:
         do_constant_folding=True,
         input_names=['input'],
         output_names=['output'],
-        dynamic_axes={'input': {0: 'batch_size'}, 'output': {0: 'batch_size'}}
+        dynamic_axes={'input': {0: 'batch_size'},
+                      'output': {0: 'batch_size'}}
     )
 
 
@@ -76,6 +78,6 @@ if __name__ == '__main__':
     Convert pth to onnx form
     '''
     pth_path: str = '../logs/afid/s3r6r5ld/checkpoints/unet-resnet34-128x128.pth'
-    pth2onnx(pth_path=pth_path, onnx_name='unet-resnet34-128x128.onnx')
+    pth2onnx(pth_path=pth_path, onnx_name='unet-resnet34-128x128-explicit.onnx')
 
 
