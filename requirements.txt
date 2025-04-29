@@ -9,11 +9,10 @@ onnxruntime==1.21.1
 opencv_python==4.11.0.86
 pandas==2.2.3
 Pillow==11.2.1
-pycuda==2025.1
+cuda-python==12.8.0
 pytorch_lightning==2.5.1
 segmentation_models_pytorch==0.5.0
 skimage==0.0
-tensorrt==10.9.0.34
 torch==2.7.0
 torchvision==0.22.0
 tqdm==4.67.1
