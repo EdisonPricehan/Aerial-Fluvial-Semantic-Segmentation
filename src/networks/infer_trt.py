@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 """
 Code in this script is for running inference on Nvidia Jetson, with minimal necessary dependencies.
 """
@@ -6,13 +8,16 @@ import torch
 import os
 import time
 import numpy as np
-from typing import Optional
+from typing import Optional, Tuple
 from PIL import Image
 
 try:
     import tensorrt as trt
 except ImportError as e:
-    raise ImportError(f'Please make sure tensorrt is installed and can be found under "/usr/src/", {e}.')
+    raise ImportError(f'Please make sure tensorrt is installed and can be found under "/usr/src/", '
+                      f'and "/usr/lib/python3.10/dist-packages/ is in the PYTHONPATH.". '
+                      f'If having "version GLIBCXX_3.4.30 not found" error, try upgrading the python version'
+                      f'to the latest by "conda install -c conda-forge libstdcxx-ng", {e}.')
 
 try:
     from cuda import cuda
@@ -20,7 +25,7 @@ except ImportError as e:
     raise ImportError(f'Please install cuda using "pip install cuda-python", {e}.')
 
 
-# Image shape is hard coded here and needs to align with the trained model
+# Image shape is hard coded here and needs to align with the trained segmentation model
 height, width = 128, 128
 
 
@@ -99,6 +104,9 @@ def build_engine(
 
 
 def trt_inference(engine, context, data):
+    """
+    Low-level inference of trt engine.
+    """
     nInput = np.sum([engine.binding_is_input(i) for i in range(engine.num_bindings)])
     nOutput = engine.num_bindings - nInput
     print('nInput:', nInput)
@@ -133,7 +141,10 @@ def trt_inference(engine, context, data):
     return bufferH
 
 
-def infer_trt(engine_path: str, img_path: str, mask_path: Optional[str] = None) -> np.ndarray:
+def infer(engine_path: str, img_path: str, mask_path: Optional[str] = None) -> Tuple[np.ndarray, np.ndarray]:
+    """
+    Inference an image with trt engine, outputs the resized image and water mask.
+    """
     assert os.path.exists(engine_path), f'{engine_path} does not exist!'
 
     TRT_LOGGER = trt.Logger(trt.Logger.INFO)
@@ -143,47 +154,48 @@ def infer_trt(engine_path: str, img_path: str, mask_path: Optional[str] = None) 
 
     context = engine.create_execution_context()
 
-    img_arr = np.array(Image.open(img_path))
-    print(f'{img_arr.shape=}')
+    # Load image, resize to desired shape, then convert to numpy array
+    img_arr = np.array(Image.open(img_path).resize((width, height)))
+    print(f'After resize: {img_arr.shape=}')
 
-    img_arr = np.resize(img_arr, (height, width, 3))
-    print(f'{img_arr.shape=}')
+    # Transpose numpy array to (C, H, W), increase the 1st dim, then normalize to range [0, 1]
+    img_arr_input = img_arr.transpose((2, 0, 1))[None].astype(np.float32) / 255
+    print(f'After transpose and normalization: {img_arr_input.shape=}')
 
-    img_arr = img_arr.transpose((2, 0, 1))[None].astype(np.float32) / 255
-    # img_arr = img_arr.transpose((2, 0, 1)).astype(np.float32) / 255
-    print(f'{img_arr.shape=}')
+    context.set_binding_shape(0, img_arr_input.shape)
 
-    context.set_binding_shape(0, img_arr.shape)
+    # s = context.get_binding_shape(0)
+    # print(f'Binding input shape {s}.')
 
-    s = context.get_binding_shape(0)
-    print(f'Binding input shape {s}.')
-
+    # Do trt inference
     trt_start_time = time.time()
-    trt_outputs = trt_inference(engine, context, img_arr)
+    trt_outputs = trt_inference(engine, context, img_arr_input)
     print(f'{trt_outputs=}')
 
+    # Reshape to get inferred mask
     pred_mask = np.array(trt_outputs[1]).reshape(height, width)
     print(f'{pred_mask.shape=}')
 
+    # Use pytorch's sigmoid function to convert to prob, then convert to uint mask
     pred_mask_torch = torch.from_numpy(pred_mask)
-    # pred_mask_torch = pred_mask_torch.unsqueeze(0)
     pred_mask_torch = pred_mask_torch.sigmoid()
-    pred_mask_torch = ((pred_mask_torch > 0.5).float() * 255).to(torch.uint8).squeeze()
+    pred_mask_torch = ((pred_mask_torch > 0.5).float() * 255).to(torch.uint8)
     print(f'{pred_mask_torch.shape=}')
 
     trt_end_time = time.time()
     print('Inference finished. Time cost: ', trt_end_time - trt_start_time)
 
-    pred_mask_np = pred_mask_torch.detach().cpu().numpy()
-    print(f'{pred_mask_np.shape=}')
+    # Convert back to numpy for image display or save
+    pred_mask_output = pred_mask_torch.detach().cpu().numpy()
+    print(f'{pred_mask_output.shape=}')
 
     # Save mask to image
     if mask_path is not None:
-        pred_mask_np_hwc = np.repeat(pred_mask_np[:, :, np.newaxis], 3, axis=2)
+        pred_mask_np_hwc = np.repeat(pred_mask_output[:, :, np.newaxis], 3, axis=2)
         mask = Image.fromarray(pred_mask_np_hwc)
         mask.save(mask_path)
 
-    return pred_mask_np
+    return img_arr_input, pred_mask_output
 
 
 def validate_onnx(onnx_model_path: str):
@@ -199,12 +211,17 @@ if __name__ == '__main__':
     # Example code to do semantic segmentation inference
     trt_model_path: str = '../models/unet-resnet34-128x128-fp16.trt'
     img_path: str = '../../AerialFluvialDataset/WildcatCreekDataset/wildcat_dataset/images/wildcat_downward_0000.jpg'
+    # Convert to abs path
+    trt_model_path = os.path.join(os.path.dirname(__file__), trt_model_path)
+    img_path = os.path.join(os.path.dirname(__file__), img_path)
+    # Define mask name and path
     img_dir_name: str = os.path.dirname(img_path)
     img_base_name: str = os.path.splitext(os.path.basename(img_path))[0]
     mask_name: str = f'{img_base_name}_mask.png'
     mask_path: str = os.path.join(img_dir_name, mask_name)
+    mask_path = os.path.join(os.path.dirname(__file__), mask_path)
 
-    infer_trt(engine_path=trt_model_path, img_path=img_path, mask_path=mask_path)
+    infer(engine_path=trt_model_path, img_path=img_path, mask_path=mask_path)
 
 
 
