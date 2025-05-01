@@ -6,19 +6,27 @@ import collections
 import random
 import cv2
 import os
-
-__all__ = ['VideoFilePathToTensor', 'VideoFolderPathToTensor', 'VideoResize', 'VideoRandomCrop', 'VideoCenterCrop',
-           'VideoRandomHorizontalFlip', 'VideoRandomVerticalFlip', 'VideoGrayscale']
+from typing import Optional
 
 
-class VideoFilePathToTensor(object):
+__all__ = ['VideoFilePathToTensor',
+           'VideoFolderPathToTensor',
+           'VideoResize',
+           'VideoRandomCrop',
+           'VideoCenterCrop',
+           'VideoRandomHorizontalFlip',
+           'VideoRandomVerticalFlip',
+           'VideoGrayscale']
+
+
+class VideoFilePathToTensor:
     """ load video at given file path to torch.Tensor (C x L x H x W, C = 3) 
         It can be composed with torchvision.transforms.Compose().
         
     Args:
-        max_len (int): Maximum output time depth (L <= max_len). Default is None.
+        max_len (int): Maximum output frames count (L <= max_len). Default is None.
             If it is set to None, it will output all frames. 
-        fps (int): sample frame per seconds. It must lower than or equal the origin video fps.
+        fps (int): sample frame per seconds. It must be lower than or equal to the original video fps.
             Default is None. 
         padding_mode (str): Type of padding. Default to None. Only available when max_len is not None.
             - None: won't padding, video length is variable.
@@ -26,14 +34,14 @@ class VideoFilePathToTensor(object):
             - 'last': padding the rest empty frames to the last frame.
     """
 
-    def __init__(self, max_len=None, fps=None, padding_mode=None):
+    def __init__(self, max_len: Optional[int] = None, fps: Optional[int] = None, padding_mode: Optional[str] = None):
         self.max_len = max_len
         self.fps = fps
         assert padding_mode in (None, 'zero', 'last')
         self.padding_mode = padding_mode
         self.channels = 3  # only available to read 3 channels video
 
-    def __call__(self, path):
+    def __call__(self, path: str) -> torch.Tensor:
         """
         Args:
             path (str): path of video file.
@@ -42,34 +50,36 @@ class VideoFilePathToTensor(object):
             torch.Tensor: Video Tensor (C x L x H x W)
         """
 
-        # open video file
+        # Open video file
         cap = cv2.VideoCapture(path)
-        assert(cap.isOpened())
+        assert cap.isOpened()
 
-        # calculate sample_factor to reset fps
+        # Calculate sample_factor to reset fps
         sample_factor = 1
         if self.fps:
             old_fps = cap.get(cv2.CAP_PROP_FPS)  # fps of video
             sample_factor = int(old_fps / self.fps)
-            assert(sample_factor >= 1)
+            assert sample_factor >= 1
         
-        # init empty output frames (C x L x H x W)
+        # Init empty output frames (C x L x H x W)
         height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
         width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
         num_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
 
+        # Calculate desired frames count
         time_len = None
         if self.max_len:
-            # time length has upper bound
+            # Time length has upper bound
             if self.padding_mode:
-                # padding all video to the same time length
+                # Padding all video to the same time length
                 time_len = self.max_len
             else:
-                # video have variable time length
+                # Video have variable time length
                 time_len = min(int(num_frames / sample_factor), self.max_len)
         else:
-            # time length is unlimited
+            # Time length is unlimited
             time_len = int(num_frames / sample_factor)
+        assert time_len is not None
 
         frames = torch.FloatTensor(self.channels, time_len, height, width)
 
@@ -80,21 +90,19 @@ class VideoFilePathToTensor(object):
             cap.set(cv2.CAP_PROP_POS_FRAMES, frame_index)
             ret, frame = cap.read()
             if ret:
-                # successfully read frame
-                # BGR to RGB
-                frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)  
+                # Successfully read frame
+                frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)  # BGR to RGB
                 frame = torch.from_numpy(frame)
-                # (H x W x C) to (C x H x W)
-                frame = frame.permute(2, 0, 1)
+                frame = frame.permute(2, 0, 1)  # (H x W x C) to (C x H x W)
                 frames[:, index, :, :] = frame.float()
             else:
-                # reach the end of the video
+                # Reach the end of the video
                 if self.padding_mode == 'zero':
                     # fill the rest frames with 0.0
                     frames[:, index:, :, :] = 0
                 elif self.padding_mode == 'last':
                     # fill the rest frames with the last frame
-                    assert(index > 0)
+                    assert index > 0
                     frames[:, index:, :, :] = frames[:, index-1, :, :].view(self.channels, 1, height, width)
                 break
 
@@ -103,7 +111,7 @@ class VideoFilePathToTensor(object):
         return frames
 
 
-class VideoFolderPathToTensor(object):
+class VideoFolderPathToTensor:
     """ load video at given folder path to torch.Tensor (C x L x H x W) 
         It can be composed with torchvision.transforms.Compose().
         
@@ -116,12 +124,12 @@ class VideoFolderPathToTensor(object):
             - 'last': padding the rest empty frames to the last frame.
     """
 
-    def __init__(self, max_len=None, padding_mode=None):
+    def __init__(self, max_len: Optional[int] = None, padding_mode: Optional[str] = None):
         self.max_len = max_len
         assert padding_mode in (None, 'zero', 'last')
         self.padding_mode = padding_mode
 
-    def __call__(self, path):
+    def __call__(self, path: str) -> torch.Tensor:
         """
         Args:
             path (str): path of video folder.
@@ -131,7 +139,7 @@ class VideoFolderPathToTensor(object):
         """
         
         # get video properity
-        frames_path = sorted([os.path.join(path,f) for f in os.listdir(path) if os.path.isfile(os.path.join(path, f))])
+        frames_path = sorted([os.path.join(path, f) for f in os.listdir(path) if os.path.isfile(os.path.join(path, f))])
         frame = cv2.imread(frames_path[0])
         height, width, channels = frame.shape
         num_frames = len(frames_path)
@@ -171,7 +179,7 @@ class VideoFolderPathToTensor(object):
                     frames[:, index:, :, :] = 0
                 elif self.padding_mode == 'last':
                     # fill the rest frames with the last frame
-                    assert(index > 0)
+                    assert index > 0
                     frames[:, index:, :, :] = frames[:, index-1, :, :].view(channels, 1, height, width)
                 break
 
@@ -179,7 +187,7 @@ class VideoFolderPathToTensor(object):
         return frames
 
 
-class VideoResize(object):
+class VideoResize:
     """ resize video tensor (C x L x H x W) to (C x L x h x w) 
     
     Args:
@@ -224,7 +232,7 @@ class VideoResize(object):
         return self.__class__.__name__ + '(size={0})'.format(self.size)
 
         
-class VideoRandomCrop(object):
+class VideoRandomCrop:
     """ Crop the given Video Tensor (C x L x H x W) at a random location.
 
     Args:
@@ -256,7 +264,7 @@ class VideoRandomCrop(object):
         return video
 
 
-class VideoCenterCrop(object):
+class VideoCenterCrop:
     """ Crops the given video tensor (C x L x H x W) at the center.
 
     Args:
@@ -287,7 +295,7 @@ class VideoCenterCrop(object):
         return video
 
 
-class VideoRandomHorizontalFlip(object):
+class VideoRandomHorizontalFlip:
     """ Horizontal flip the given video tensor (C x L x H x W) randomly with a given probability.
 
     Args:
@@ -313,7 +321,7 @@ class VideoRandomHorizontalFlip(object):
         return video
             
 
-class VideoRandomVerticalFlip(object):
+class VideoRandomVerticalFlip:
     """ Vertical flip the given video tensor (C x L x H x W) randomly with a given probability.
 
     Args:
@@ -339,7 +347,7 @@ class VideoRandomVerticalFlip(object):
         return video
 
 
-class VideoGrayscale(object):
+class VideoGrayscale:
     """ Convert video (C x L x H x W) to grayscale (C' x L x H x W, C' = 1 or 3)
 
     Args:
