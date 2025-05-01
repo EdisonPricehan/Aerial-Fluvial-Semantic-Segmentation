@@ -9,9 +9,10 @@ from torch.utils.data import DataLoader
 import torchvision
 from torchvision.io import write_video
 
-from dataset import VideoDataset
-from src.utils import video_transforms as transforms
-from inference import get_model, inference
+from networks.dataset import VideoDataset
+from utils import video_transforms as transforms
+from networks.inference import get_model, inference
+
 
 if __name__ == '__main__':
     # parse necessary arguments if run as script
