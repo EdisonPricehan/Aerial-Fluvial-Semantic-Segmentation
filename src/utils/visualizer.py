@@ -10,7 +10,7 @@ import cv2
 import fire
 import numpy as np
 
-from build_dataset import get_dataset_list
+from utils.build_dataset import get_dataset_list
 
 
 def plot_img_and_mask(img, mask):
@@ -269,6 +269,42 @@ def double_sided_bars(csv_file_path: str):
     fig.savefig('bar_metrics.png', bbox_inches="tight", dpi=300)
 
     # fig.savefig('bar_params.png', bbox_inches="tight", dpi=300)
+
+
+def show_compare(rgb, gt_mask, pred_mask):
+    """
+    Display an RGB image, ground-truth mask, and predicted mask side by side,
+    reusing the same window if it already exists.
+    """
+    global _cmp_fig, _cmp_axes
+
+    # First call: create figure & axes
+    if '_cmp_fig' not in globals():
+        plt.ion()  # enable interactive mode
+        _cmp_fig, _cmp_axes = plt.subplots(1, 3, figsize=(12, 4))
+        _cmp_fig.suptitle("RGB / GT Mask / Predicted Mask")
+
+    # Unpack the axes
+    ax_rgb, ax_gt, ax_pred = _cmp_axes
+
+    # Clear previous images
+    for ax in _cmp_axes:
+        ax.clear()
+        ax.axis('off')
+
+    # Plot new data
+    ax_rgb.imshow(rgb)
+    ax_rgb.set_title("RGB")
+
+    ax_gt.imshow(gt_mask, cmap='gray')
+    ax_gt.set_title("Ground-Truth")
+
+    ax_pred.imshow(pred_mask, cmap='gray')
+    ax_pred.set_title("Prediction")
+
+    # Force a draw of the updated figure
+    _cmp_fig.canvas.draw()
+    plt.pause(0.001)
 
 
 if __name__ == '__main__':
