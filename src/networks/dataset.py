@@ -14,6 +14,9 @@ from utils.build_dataset import get_dataset_list
 from utils.convert_images import abs_path
 
 
+__all__ = ['FluvialDataset', 'VideoDataset', 'VideoLabelDataset']
+
+
 class FluvialDataset(Dataset):
     def __init__(
             self,
@@ -208,8 +211,8 @@ if __name__ == '__main__':
     # test for FluvialDataset
     train_dataset_path = '../dataset/3-datasets-baseline/train.csv'
     valid_dataset_path = '../dataset/3-datasets-baseline/valid_wabash_wildcat.csv'
-    from src.utils.custom_transforms import resize
-    training_dataset = FluvialDataset(train_dataset_path, use_augment=True, transform=resize, target_transform=resize)
+    from utils.custom_transforms import resize
+    training_dataset = FluvialDataset(train_dataset_path, use_augment=False, transform=resize, target_transform=resize)
     valid_dataset = FluvialDataset(valid_dataset_path, use_augment=False, transform=resize, target_transform=resize)
     print(len(training_dataset))
     print(len(valid_dataset))
@@ -218,7 +221,7 @@ if __name__ == '__main__':
     print(training_dataset[0][1].shape)
 
     # test for VideoDataset
-    from src.utils import video_transforms as transforms
+    from utils import video_transforms as transforms
     import torchvision
     dataset = VideoDataset('./video-path/video_path.csv',
                            transform=torchvision.transforms.Compose([
