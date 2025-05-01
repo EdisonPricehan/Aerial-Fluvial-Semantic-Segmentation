@@ -5,6 +5,9 @@ from networks.model import LitSegModel as LSM
 from utils.custom_transforms import resolution_mapping, supported_resolution_strings
 
 
+__all__ = ['dummy_input', 'ckpt2pth', 'pth2onnx']
+
+
 def dummy_input(res_level: str) -> torch.Tensor:
     assert res_level in resolution_mapping.keys(), f'{res_level} is not supported. Currently support {supported_resolution_strings()}.'
 
