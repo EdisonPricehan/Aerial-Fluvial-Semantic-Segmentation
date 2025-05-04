@@ -1,4 +1,5 @@
 import os
+import time
 import torch
 import numpy as np
 from PIL import Image
@@ -24,15 +25,22 @@ class InferFolder:
         # Fix user name mismatch between PC and Jetson
         self.dataset.img_files = [i.replace('edison', 'orin-nano') for i in self.dataset.img_files]
         self.dataset.mask_files = [i.replace('edison', 'orin-nano') for i in self.dataset.mask_files]
-        print(f'{len(self.dataset)=}')
+        self.dataset_len: int = len(self.dataset)
+        print(f'{self.dataset_len=}')
 
     def run(self):
         try:
+            model_load_start_time = time.time()
+
             # Load trt engine and context
             engine, context = get_engine_context(engine_path=self.engine_path)
             img, _ = self.dataset[0]  # Assume all data are of the same shape
             img = img.numpy()[None]  # (1, C, H, W)
             context.set_binding_shape(0, tuple(img.shape))
+
+            infer_start_time = time.time()
+            loading_time = infer_start_time - model_load_start_time
+            print(f'Model loading time: {loading_time:.2f} s')
 
             for idx in tqdm(range(len(self.dataset))):
                 # Get data
@@ -47,10 +55,12 @@ class InferFolder:
                 pred_mask = post_process_mask(trt_outputs[1], return_tensor=False)
                 # print(f'{img.shape=} {mask.shape=} {pred_mask.shape=}')
 
-                # Visualize
+                # Visualize (Disable to get correct inference time)
                 show_compare(rgb=img.transpose((1, 2, 0)), gt_mask=mask, pred_mask=pred_mask)
 
-                # exit(0)
+            infer_end_time = time.time()
+            infer_time = infer_end_time - infer_start_time
+            print(f'Total infer time: {infer_time:.2f} s, average infer time: {infer_time / self.dataset_len:.2f} s')
         except Exception as e:
             print(e)
 
