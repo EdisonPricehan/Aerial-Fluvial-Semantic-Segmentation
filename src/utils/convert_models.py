@@ -2,7 +2,7 @@ import torch
 import os
 
 from networks.model import LitSegModel as LSM
-from utils.custom_transforms import resolution_mapping, supported_resolution_strings
+from utils.image_transforms import resolution_mapping, supported_resolution_strings
 
 
 __all__ = ['dummy_input', 'ckpt2pth', 'pth2onnx']

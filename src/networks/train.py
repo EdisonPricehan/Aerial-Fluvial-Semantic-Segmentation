@@ -13,7 +13,7 @@ from lightning.pytorch.loggers import WandbLogger
 
 from networks.dataset import FluvialDataset
 from networks.model import LitSegModel as LSM, check_encoder_existence, check_decoder_existence
-from utils.custom_transforms import get_transform_by_resolution_level, supported_resolution_strings
+from utils.image_transforms import get_transform_by_resolution_level, supported_resolution_strings
 
 # Change matmul precision based on preference-overhead tradeoff
 torch.set_float32_matmul_precision('medium')  # {'highest', 'high', 'medium'}

@@ -151,7 +151,7 @@ class VideoDataset(Dataset):
         └── frame-004.jpg
     """
 
-    def __init__(self, csv_file, transform=None):
+    def __init__(self, csv_file: str, transform=None):
         self.dataframe = pd.read_csv(csv_file)
         self.transform = transform
 
@@ -211,7 +211,7 @@ if __name__ == '__main__':
     # test for FluvialDataset
     train_dataset_path = '../dataset/3-datasets-baseline/train.csv'
     valid_dataset_path = '../dataset/3-datasets-baseline/valid_wabash_wildcat.csv'
-    from utils.custom_transforms import resize
+    from utils.image_transforms import resize
     training_dataset = FluvialDataset(train_dataset_path, use_augment=False, transform=resize, target_transform=resize)
     valid_dataset = FluvialDataset(valid_dataset_path, use_augment=False, transform=resize, target_transform=resize)
     print(len(training_dataset))

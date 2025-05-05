@@ -151,6 +151,53 @@ def trt_inference(engine, context, data):
     return bufferH
 
 
+def trt_inference_policy(engine, context, inputs):
+    """
+    Low-level inference of trt engine for policy with multiple inputs (obs and reset_flag).
+
+    Args:
+        engine: TensorRT engine
+        context: TensorRT execution context
+        inputs: A sequence (tuple/list) of NumPy arrays, one per input binding.
+    """
+    nInput = np.sum([engine.binding_is_input(i) for i in range(engine.num_bindings)])
+    nOutput = engine.num_bindings - nInput
+
+    # For debugging
+    # print('nInput:', nInput)
+    # print('nOutput:', nOutput)
+    # for i in range(nInput):
+    #     print("Bind[%2d]:i[%2d]->" % (i, i), engine.get_binding_dtype(i), engine.get_binding_dtype(i))
+    # for i in range(nInput, nInput + nOutput):
+    #     print("Bind[%2d]:o[%2d]->" % (i, i - nInput), engine.get_binding_dtype(i), engine.get_binding_dtype(i))
+
+    bufferH = []
+    for inp in inputs:
+        arr = np.ascontiguousarray(inp)  # ensure C‑contiguous
+        bufferH.append(arr.reshape(-1))
+    # bufferH.append(np.ascontiguousarray(data.reshape(-1)))
+
+    for i in range(nInput, nInput + nOutput):
+        bufferH.append(np.empty(context.get_binding_shape(i), dtype=trt.nptype(engine.get_binding_dtype(i))))
+
+    bufferD = []
+    for i in range(nInput + nOutput):
+        bufferD.append(cuda.cuMemAlloc(bufferH[i].nbytes)[1])
+
+    for i in range(nInput):
+        cuda.cuMemcpyHtoD(bufferD[i], bufferH[i].ctypes.data, bufferH[i].nbytes)
+
+    context.execute_v2(bufferD)
+
+    for i in range(nInput, nInput + nOutput):
+        cuda.cuMemcpyDtoH(bufferH[i].ctypes.data, bufferD[i], bufferH[i].nbytes)
+
+    for b in bufferD:
+        cuda.cuMemFree(b)
+
+    return bufferH
+
+
 def load_and_process_img(img_path: str, h: int = height, w: int = width) -> np.ndarray:
     """
     Load the rgb image from path, then process it as numpy array, as input to trt engine.
@@ -236,7 +283,7 @@ def infer(
             raise ValueError(f'Input image numpy array needs to be from FluvialDataset class (CHW, normalized), '
                              f'given image shape: {img_arr.shape}, dtype: {img_arr.dtype}.')
 
-    context.set_binding_shape(0, img_arr.shape)
+    # context.set_binding_shape(0, img_arr.shape)  # This seems not necessary
 
     trt_start_time = time.time()
 
@@ -257,6 +304,34 @@ def infer(
         mask.save(mask_path)
 
     return img_arr, pred_mask_np
+
+
+def infer_policy(engine_path: str, obs: np.ndarray, reset: bool) -> np.ndarray:
+    """
+    Infer from a CADE policy in trt format.
+    Args:
+        engine_path:
+        obs:
+        reset:
+
+    Returns:
+        Agent action.
+    """
+    # Get trt engine and context
+    engine, context = get_engine_context(engine_path=engine_path)
+
+    print(f'{obs.shape=}')
+
+    rf = np.array([[reset]], dtype=bool)
+
+    trt_outputs = trt_inference_policy(engine=engine, context=context, inputs=[obs, rf])
+    # print(f'{trt_outputs=}')
+
+    action = trt_outputs[-1]
+
+    print(f'{action=}')
+
+    return action
 
 
 def validate_onnx(onnx_model_path: str):
@@ -282,7 +357,15 @@ if __name__ == '__main__':
     mask_path: str = os.path.join(img_dir_name, mask_name)
     mask_path = os.path.join(os.path.dirname(__file__), mask_path)
 
+    '''
+    Infer perception (semantic segmentation) trt engine with specified image
+    '''
     infer(engine_path=trt_model_path, img_path=img_path, mask_path=mask_path)
 
-
+    '''
+    Infer policy trt engine with random observation
+    '''
+    # trt_policy_path: str = '../models/policy.trt'
+    # obs = np.random.random((1, 256)).astype(np.float32)
+    # action = infer_policy(engine_path=trt_policy_path, obs=obs, reset=False)
 

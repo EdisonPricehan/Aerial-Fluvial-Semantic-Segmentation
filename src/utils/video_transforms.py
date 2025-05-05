@@ -2,11 +2,10 @@ import torch
 import torchvision
 import numpy as np
 import PIL
-import collections 
 import random
 import cv2
 import os
-from typing import Optional
+from typing import Optional, Iterable
 
 
 __all__ = ['VideoFilePathToTensor',
@@ -80,6 +79,7 @@ class VideoFilePathToTensor:
             # Time length is unlimited
             time_len = int(num_frames / sample_factor)
         assert time_len is not None
+        print(f'Total frames: {num_frames}, sample factor: {sample_factor}, {time_len} frames will be extracted.')
 
         frames = torch.FloatTensor(self.channels, time_len, height, width)
 
@@ -197,7 +197,7 @@ class VideoResize:
     """
 
     def __init__(self, size, interpolation=PIL.Image.BILINEAR):
-        assert isinstance(size, collections.Iterable) and len(size) == 2
+        assert isinstance(size, Iterable) and len(size) == 2
         self.size = size
         self.interpolation = interpolation
 

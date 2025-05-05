@@ -8,7 +8,7 @@ from tqdm import tqdm
 
 from networks.infer_trt import get_engine_context, trt_inference, post_process_mask
 from networks.dataset import FluvialDataset
-from utils.custom_transforms import get_transform_by_resolution_level
+from utils.image_transforms import get_transform_by_resolution_level
 from utils.visualizer import show_compare
 
 
@@ -34,9 +34,9 @@ class InferFolder:
 
             # Load trt engine and context
             engine, context = get_engine_context(engine_path=self.engine_path)
-            img, _ = self.dataset[0]  # Assume all data are of the same shape
-            img = img.numpy()[None]  # (1, C, H, W)
-            context.set_binding_shape(0, tuple(img.shape))
+            # img, _ = self.dataset[0]  # Assume all data are of the same shape
+            # img = img.numpy()[None]  # (1, C, H, W)
+            # context.set_binding_shape(0, tuple(img.shape))
 
             infer_start_time = time.time()
             loading_time = infer_start_time - model_load_start_time

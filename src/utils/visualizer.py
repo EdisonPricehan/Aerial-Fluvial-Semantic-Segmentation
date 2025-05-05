@@ -307,6 +307,42 @@ def show_compare(rgb, gt_mask, pred_mask):
     plt.pause(0.001)
 
 
+def show_compare_policy(rgb, pred_mask, patchified_mask, action):
+    """
+        Display an RGB image, predicted mask, patchified predicted mask and policy-chosen action side by side,
+        reusing the same window if it already exists.
+        """
+    global _cmp_fig, _cmp_axes
+
+    # First call: create figure & axes
+    if '_cmp_fig' not in globals():
+        plt.ion()  # enable interactive mode
+        _cmp_fig, _cmp_axes = plt.subplots(1, 3, figsize=(16, 4))
+        _cmp_fig.suptitle(f'RGB / Predicted Mask / Patchified Pred Mask / Action')
+
+    # Unpack the axes
+    ax_rgb, ax_pred, ax_patch = _cmp_axes
+
+    # Clear previous images
+    for ax in _cmp_axes:
+        ax.clear()
+        ax.axis('off')
+
+    # Plot new data
+    ax_rgb.imshow(rgb)
+    ax_rgb.set_title("RGB")
+
+    ax_pred.imshow(pred_mask, cmap='gray')
+    ax_pred.set_title("Prediction")
+
+    ax_patch.imshow(patchified_mask, cmap='gray')
+    ax_patch.set_title(f'Patchified, action {action[0]}')
+
+    # Force a draw of the updated figure
+    _cmp_fig.canvas.draw()
+    plt.pause(0.001)
+
+
 if __name__ == '__main__':
     # fire.Fire()
 

@@ -57,10 +57,15 @@ if __name__ == '__main__':
 
     # create video dataset
     print("Creating video dataset ...")
-    datasets = VideoDataset(input_video_csv_path,
-                            transform=torchvision.transforms.Compose([
-                                transforms.VideoFilePathToTensor(fps=desired_fps, max_len=duration * desired_fps),
-                                transforms.VideoResize([img_height, img_width])]))
+    datasets = VideoDataset(
+        csv_file=input_video_csv_path,
+        transform=torchvision.transforms.Compose(
+            [
+                transforms.VideoFilePathToTensor(fps=desired_fps, max_len=duration * desired_fps),
+                transforms.VideoResize([img_height, img_width])
+            ]
+        )
+    )
     print("Video dataset created!")
 
     # process all videos

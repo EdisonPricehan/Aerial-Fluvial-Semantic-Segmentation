@@ -7,7 +7,7 @@ from typing import Optional
 
 from networks.dataset import FluvialDataset
 from networks.model import LitSegModel as LSM, check_encoder_existence, check_decoder_existence
-from utils.custom_transforms import get_transform_by_resolution_level, supported_resolution_strings, RESOLUTIONS
+from utils.image_transforms import get_transform_by_resolution_level, supported_resolution_strings, RESOLUTIONS
 
 import torch
 from torch.utils.data import DataLoader
