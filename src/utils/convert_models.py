@@ -74,13 +74,13 @@ if __name__ == '__main__':
     '''
     Convert checkpoint to pure pytorch form
     '''
-    # ckpt_path: str = '../logs/afid/s3r6r5ld/checkpoints/epoch=52-step=1113.ckpt'
-    # ckpt2pth(ckpt_path=ckpt_path, pth_name='unet-resnet34-128x128.pth')
+    ckpt_path: str = '../models/unet-resnet34-128x128.ckpt'
+    ckpt2pth(ckpt_path=ckpt_path, pth_name='unet-resnet34-128x128.pth')
 
     '''
     Convert pth to onnx form
     '''
-    pth_path: str = '../logs/afid/s3r6r5ld/checkpoints/unet-resnet34-128x128.pth'
+    pth_path: str = '../models/unet-resnet34-128x128.pth'
     pth2onnx(pth_path=pth_path, onnx_name='unet-resnet34-128x128-explicit.onnx')
 
 
