@@ -1,5 +1,5 @@
 # Aerial Fluvial Image Dataset (AFID) for Semantic Segmentation
-
+![](./src/images/showcase/afid_showcase.png)
 
 ## AFID Download
 Please find the public Aerial Fluvial Image Dataset ([AFID](https://purr.purdue.edu/publications/4105/1)) on Purdue University Research Repository.
