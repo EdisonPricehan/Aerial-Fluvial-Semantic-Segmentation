@@ -17,6 +17,7 @@ all:
 	@echo " make install                                          # install requirements"
 	@echo " make AFID_PATH=[../dataset/afid/] networks.train      # train neural network"
 	@echo " make CKPT=<checkpoint> networks.inference             # run inference on trained model"
+	@echo " make INPUT_DIR=<input> OUTPUT_DIR=<output> png2jpeg   # convert PNG files to JPEG"
 	@echo ""
 
 # Default paths for the AFID dataset and the checkpoint
@@ -34,4 +35,10 @@ networks.train:
 networks.inference:
 	python -m networks.inference $(AFID_PATH)/test.csv $(CKPT)
 
-.PHONY: all networks.train networks.inference install
+png2jpeg:
+	@echo "Converting PNG files to JPEG..."
+	@echo "Input directory: $(INPUT_DIR)"
+	@echo "Output directory: $(OUTPUT_DIR)"
+	python -m utils.convert_images png2jpeg $(INPUT_DIR) $(OUTPUT_DIR)
+
+.PHONY: all networks.train networks.inference install png2jpeg
