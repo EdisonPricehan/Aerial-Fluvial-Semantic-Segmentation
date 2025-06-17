@@ -254,27 +254,27 @@ def png2jpeg(input_dir, output_dir, quality=95, dpi=(72, 72)):
     # Validate required parameters
     if not input_dir or input_dir.strip() == '':
         raise ValueError("Input directory must be provided!")
-    
+
     if not output_dir or output_dir.strip() == '':
         raise ValueError("Output directory must be provided!")
 
     # Validate that input directory exists
     if not os.path.exists(input_dir):
         raise ValueError(f"Input directory does not exist: {input_dir}")
-    
+
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
         print(f"{output_dir} was created.")
 
     input_list = []
     get_filelist(input_dir, input_list)
-    
+
     # Filter to only PNG files
     png_list = filter_by_suffix(input_list, '.png')
     if len(png_list) == 0:
         print("No PNG files found in the input directory!")
         return
-    
+
     print(f"Found {len(png_list)} PNG files to convert.")
 
     for i in tqdm(png_list):
@@ -282,7 +282,7 @@ def png2jpeg(input_dir, output_dir, quality=95, dpi=(72, 72)):
             # Load PNG image using PIL
             im = Image.open(i)
             print(f"Processing: {os.path.basename(i)}, size: {im.size}, mode: {im.mode}")
-            
+
             # Convert to RGB if necessary (JPEG doesn't support transparency)
             if im.mode in ('RGBA', 'LA', 'P'):
                 # Create white background for transparent images
@@ -310,14 +310,54 @@ def png2jpeg(input_dir, output_dir, quality=95, dpi=(72, 72)):
                 dpi=dpi,  # density setting for aspect ratio
                 subsampling=0  # no subsampling for higher quality
             )
-            
+
             print(f"Converted: {os.path.basename(i)} -> {base_name_ext}")
-            
+
         except Exception as e:
             print(f"Error converting {os.path.basename(i)}: {str(e)}")
             continue
 
     print(f"PNG to JPEG conversion finished! Processed {len(png_list)} files.")
+
+
+def rgb2grayscale(input_dir, output_dir):
+    """
+    Convert RGB PNG images to grayscale PNG images.
+    Output files will have '_grayscale' appended to their names.
+
+    Args:
+        input_dir: Relative path to input directory containing RGB PNG images
+        output_dir: Relative path to output directory for grayscale PNG images
+    """
+    input_dir = abs_path(input_dir)
+    output_dir = abs_path(output_dir)
+
+    if not os.path.exists(input_dir):
+        print(f"{input_dir} does not exist!")
+        return
+
+    if not os.path.exists(output_dir):
+        print(f"{output_dir} does not exist!")
+        return
+
+    image_list = []
+    get_filelist(input_dir, image_list)
+    image_list = filter_by_suffix(image_list, '.png')
+
+    for image_path in tqdm(image_list):
+        img = cv2.imread(image_path)
+        if img is None:
+            print(f"Failed to read image: {image_path}")
+            continue
+
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+
+        filename = os.path.basename(image_path)
+        name, ext = os.path.splitext(filename)
+        output_filename = f"{name}_grayscale{ext}"
+        output_path = os.path.join(output_dir, output_filename)
+
+        cv2.imwrite(output_path, gray)
 
 
 if __name__ == '__main__':
