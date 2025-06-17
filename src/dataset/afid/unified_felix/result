@@ -1,0 +1,13 @@
+>> rosebud_dataset/images/rgb/image_549.jpg
+JPEG image data, JFIF standard 1.01, resolution (DPI), density 72x72, segment length 16, baseline, precision 8, 1920x1440, components 3
+
+>> rgb_binary_water_masks/binary_water_mask_549.png
+PNG image data, 1920 x 1440, 8-bit/color RGB, non-interlaced
+
+
+
+>> wildcat_dataset/images/wildcat_forward_0118.jpg
+JPEG image data, JFIF standard 1.02, aspect ratio, density 1x1, segment length 16, comment: "Lavc59.9.101", baseline, precision 8, 2720x1536, components 3
+
+>> wildcat_forward_0118_binary_mask.png
+PNG image data, 2720 x 1536, 8-bit grayscale, non-interlaced

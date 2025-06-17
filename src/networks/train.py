@@ -38,6 +38,8 @@ if __name__ == '__main__':
     parser.add_argument('-d', '--decoder', type=str, default='Unet', help='Decoder type')
     parser.add_argument('--epochs', type=int, default=75, metavar='N', help='Epochs number')
     parser.add_argument('-c', '--out-class-num', type=int, default=1, metavar='N', help='Output class number')
+    parser.add_argument('-l', '--learning-rate', type=float, default=1e-4, metavar='LR',
+                        help='Learning rate (default: 1e-4)')
 
     # Parse all arguments
     args = parser.parse_args()
@@ -55,6 +57,7 @@ if __name__ == '__main__':
     decoder = args.decoder
     epochs = args.epochs
     out_class_num = args.out_class_num
+    learning_rate = args.learning_rate
 
     # Check encoder existence
     if not check_encoder_existence(encoder):
@@ -98,7 +101,7 @@ if __name__ == '__main__':
                                         patience=10, verbose=False, mode="max")
 
     # Construct desired model
-    model = LSM(arch=decoder, encoder_name=encoder, in_channels=3, out_classes=out_class_num, lr=1e-4)
+    model = LSM(arch=decoder, encoder_name=encoder, in_channels=3, out_classes=out_class_num, lr=learning_rate)
 
     # Construct model trainer
     trainer = L.Trainer(
