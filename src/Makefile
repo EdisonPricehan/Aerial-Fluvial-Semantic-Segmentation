@@ -34,10 +34,10 @@ install:
 	pip install -r ../requirements.txt
 
 networks.train:
-	python -m networks.train -l $(LEARNING_RATE) $(AFID_PATH)/test.csv $(AFID_PATH)/train.csv
+	python -m networks.train -l $(LEARNING_RATE) $(AFID_PATH)/train.csv $(AFID_PATH)/test.csv
 
 networks.train.vgg13:
-	python -m networks.train -l $(LEARNING_RATE) --encoder vgg13 $(AFID_PATH)/test.csv $(AFID_PATH)/train.csv
+	python -m networks.train -l $(LEARNING_RATE) --encoder vgg13 $(AFID_PATH)/train.csv $(AFID_PATH)/test.csv
 
 networks.inference:
 	python -m networks.inference $(AFID_PATH)/test.csv $(CKPT)
