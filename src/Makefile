@@ -10,13 +10,13 @@
 #
 
 all:
-	@echo "----------------------------------------------------------------------------------------------------------------------"
+	@echo "-------------------------------------------------------------------------------------------------------------------------"
 	@echo "                            Robust Semantic Segmentation with Adversarial Feature Inference"
-	@echo "----------------------------------------------------------------------------------------------------------------------"
+	@echo "-------------------------------------------------------------------------------------------------------------------------"
 	@echo ""
 	@echo " make install                                                                      # install requirements"
-	@echo " make AFID_PATH=[../dataset/afid/] LEARNING_RATE=[0.0001] networks.train           # train neural network"
-	@echo " make AFID_PATH=[../dataset/afid/] LEARNING_RATE=[0.0001] networks.train.vgg13     # train VGG13 neural network"
+	@echo " make AFID_PATH=[../dataset/afid/] LEARNING_RATE=[0.0001] networks.train           # train neural network (original code)"
+	@echo " make AFID_PATH=[../dataset/afid/] LEARNING_RATE=[0.0001] networks.train.vgg13     # train neural network (encoder=vgg13)"
 	@echo " make CKPT=<checkpoint> networks.inference                                         # run inference on trained model"
 	@echo " make INPUT_DIR=<input> OUTPUT_DIR=<output> png2jpeg                               # convert PNG files to JPEG"
 	@echo " make INPUT_DIR=<input> OUTPUT_DIR=<output> rgb2grayscale                          # convert RGB PNG to grayscale PNG"
