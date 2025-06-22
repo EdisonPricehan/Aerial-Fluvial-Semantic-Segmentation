@@ -17,7 +17,7 @@ all:
 	@echo " make install                                                                      # install requirements"
 	@echo " make AFID_PATH=[../dataset/afid/] LEARNING_RATE=[0.0001] networks.train           # train neural network (original code)"
 	@echo " make AFID_PATH=[../dataset/afid/] LEARNING_RATE=[0.0001] networks.train.vgg13     # train neural network (encoder=vgg13)"
-	@echo " make CKPT=<checkpoint> networks.inference                                         # run inference on trained model"
+	@echo " make CKPT=<checkpoint> PROJECT_NAME=<project> networks.inference                  # run inference on trained model"
 	@echo " make INPUT_DIR=<input> OUTPUT_DIR=<output> png2jpeg                               # convert PNG files to JPEG"
 	@echo " make INPUT_DIR=<input> OUTPUT_DIR=<output> rgb2grayscale                          # convert RGB PNG to grayscale PNG"
 	@echo ""
@@ -28,6 +28,8 @@ AFID_PATH ?= ../dataset/afid/
 CKPT ?= ../logs/lightning_logs/5ai3ighy/checkpoints/epoch=36-step=407.ckpt
 # Learning rate for training
 LEARNING_RATE ?= 0.0001
+# Project name for wandb logging during inference
+PROJECT_NAME ?= aerial-fluvial-inference
 
 install:
 	@echo "Installing requirements..."
@@ -40,7 +42,7 @@ networks.train.vgg13:
 	python -m networks.train -l $(LEARNING_RATE) --encoder vgg13 $(AFID_PATH)/train.csv $(AFID_PATH)/test.csv
 
 networks.inference:
-	python -m networks.inference $(AFID_PATH)/test.csv $(CKPT)
+	python -m networks.inference $(AFID_PATH)/test.csv $(CKPT) --project-name $(PROJECT_NAME)
 
 png2jpeg:
 	@echo "Converting PNG files to JPEG..."
