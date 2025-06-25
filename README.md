@@ -9,7 +9,7 @@ Also remember to unzip the *WildcatCreekDataset* and *WabashRiverDataset* in the
 
 
 ## Dataset Creation
-The [FluvialDataset](./src/networks/dataset.py) class accepts image and mask absolute path pairs in a csv file. 
+The [FluvialDataset](./src/networks/dataset.py) class accepts image and mask absolute path pairs in a csv file.
 An example is the csv files in this [folder](./src/dataset/afid), containing the whole dataset, train set and test set.
 These csv files can be generated using the function *build_csv_from_datasets* in [build_dataset.py](./src/utils/build_dataset.py).
 Since the csv files store the absolute paths, it is recommended to rebuild these files after git cloning.
@@ -29,7 +29,7 @@ pip install -r requirements.txt
 
 
 ## Training
-The training code is in [train.py](./src/networks/train.py). 
+The training code is in [train.py](./src/networks/train.py).
 An example usage is
 ```shell
 python -m networks.train '../dataset/afid/train.csv' '../dataset/afid/test.csv'
@@ -38,13 +38,13 @@ If having *No such file or directory* error, make sure the paths in *train.csv* 
 
 
 ## Logging
-We use [wandb](https://wandb.ai/home) for logging intermediate checkpoints. 
+We use [wandb](https://wandb.ai/home) for logging intermediate checkpoints.
 You can visualize the training progress, and inspect the trained models from their website (although models are also stored locally, it is more convenient to see which model is the best on their website).
 
 
 ## Inference
 The inference code is in [inference.py](./src/networks/inference.py).
-An example usage is 
+An example usage is
 ```shell
 python -m networks.inference '../dataset/afid/test.csv' '../models/unet-resnet34-128x128.ckpt'
 ```
@@ -61,4 +61,46 @@ If you use the AFID dataset or this repo in your work, please cite our paper. Th
   year={2023},
   publisher={IEEE}
 }
+```
+
+## Training Diagram
+
+```mermaid
+graph TD
+    A["Training Start"] --> B["Parse Arguments<br/>- train/valid CSV paths<br/>- encoder/decoder types<br/>- batch size, epochs, learning rate"]
+
+    B --> C["Validate Architecture<br/>- Check encoder exists in SMP library<br/>- Check decoder exists in SMP library<br/>SMP = Segmentation Models PyTorch"]
+
+    C --> D["Load Datasets<br/>FluvialDataset Class<br/>- Training data (images + masks)<br/>- Validation data (images + masks)<br/>- Apply transforms/augmentations"]
+
+    D --> E["Build Model<br/>LitSegModel (PyTorch Lightning)<br/>- Architecture: decoder + encoder<br/>- Loss: Dice Loss (1 - Dice Coefficient)<br/>- Optimizer: Adam"]
+
+    E --> F["Setup Logging & Callbacks<br/>- WandB Logger (Weights & Biases)<br/>- ModelCheckpoint (saves best F1)<br/>- EarlyStopping (patience=10 epochs)"]
+
+    F --> G["Training Loop<br/>For each epoch (default: 75):"]
+
+    G --> H["Training Phase"]
+    H --> H1["For each batch:<br/>1. Forward pass through network<br/>2. Compute Dice Loss<br/>3. Backpropagation & gradient update<br/>4. Calculate confusion matrix:<br/>   • TP = True Positives<br/>   • FP = False Positives<br/>   • FN = False Negatives<br/>   • TN = True Negatives"]
+
+    H1 --> I["Training Epoch End<br/>Calculate & Log Metrics:<br/>• IoU = Intersection over Union<br/>  - Per-image IoU (avg per image)<br/>  - Dataset IoU (aggregate)<br/>• F1 = 2×(Precision×Recall)/(Precision+Recall)<br/>• Accuracy = (TP+TN)/(TP+FP+FN+TN)"]
+
+    I --> J["Validation Phase"]
+    J --> J1["For each batch (no gradients):<br/>1. Forward pass through network<br/>2. Compute Dice Loss<br/>3. Calculate confusion matrix:<br/>   • TP = True Positives (water predicted as water)<br/>   • FP = False Positives (non-water predicted as water)<br/>   • FN = False Negatives (water predicted as non-water)<br/>   • TN = True Negatives (non-water predicted as non-water)"]
+
+    J1 --> K["Validation Epoch End<br/>Calculate & Log Metrics:<br/>• valid_dataset_iou<br/>• valid_per_image_iou<br/>• valid_dataset_f1 (PRIMARY METRIC)<br/>• valid_dataset_accuracy<br/>Send to WandB dashboard"]
+
+    K --> L{"Monitor Primary Metric<br/>valid_dataset_f1<br/>(Validation F1 Score)<br/>Is this the best so far?"}
+    L -->|Yes| M["Save Best Model<br/>ModelCheckpoint saves .ckpt file<br/>Based on highest valid_dataset_f1<br/>Contains: weights, optimizer state, epoch"]
+    L -->|No| N{"Early Stopping Check<br/>Has valid_dataset_f1<br/>improved in last 10 epochs?<br/>(patience=10)"}
+
+    M --> N
+    N -->|No improvement<br/>Stop training| O["Training Complete<br/>Best model saved as .ckpt<br/>Ready for inference/conversion<br/>Can be converted to ONNX/TensorRT"]
+    N -->|Still improving<br/>Continue| G
+
+    style A fill:#e1f5fe
+    style O fill:#c8e6c9
+    style E fill:#fff3e0
+    style L fill:#fce4ec
+    style N fill:#fce4ec
+    style K fill:#f3e5f5
 ```
