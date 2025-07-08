@@ -18,6 +18,8 @@ all:
 	@echo " make AFID_PATH=[../dataset/afid/] LEARNING_RATE=[0.0001] networks.train           # train neural network (original code)"
 	@echo " make AFID_PATH=[../dataset/afid/] LEARNING_RATE=[0.0001] networks.train.vgg13     # train neural network (encoder=vgg13)"
 	@echo " make CKPT=<checkpoint> PROJECT_NAME=<project> networks.inference                  # run inference on trained model"
+	@echo " make VIDEO_CSV=<csv> OUTPUT_VIDEO=<output> MODEL_PATH=<model> networks.video      # run video inference with model"
+	@echo "                                                                                   # other parameters: [VIDEO_HEIGHT], [VIDEO_WIDTH], [VIDEO_FPS]"
 	@echo " make INPUT_DIR=<input> OUTPUT_DIR=<output> png2jpeg                               # convert PNG files to JPEG"
 	@echo " make INPUT_DIR=<input> OUTPUT_DIR=<output> rgb2grayscale                          # convert RGB PNG to grayscale PNG"
 	@echo ""
@@ -30,6 +32,10 @@ CKPT ?= ../logs/lightning_logs/5ai3ighy/checkpoints/epoch=36-step=407.ckpt
 LEARNING_RATE ?= 0.0001
 # Project name for wandb logging during inference
 PROJECT_NAME ?= aerial-fluvial-inference
+# Video inference parameters (defaulting values)
+VIDEO_HEIGHT ?= 320
+VIDEO_WIDTH ?= 544
+VIDEO_FPS ?= 10
 
 install:
 	@echo "Installing requirements..."
@@ -44,6 +50,9 @@ networks.train.vgg13:
 networks.inference:
 	python -m networks.inference $(AFID_PATH)/test.csv $(CKPT) --project-name $(PROJECT_NAME)
 
+networks.video:
+	python -m networks.inference_video -i $(VIDEO_CSV) -o $(OUTPUT_VIDEO) -m $(MODEL_PATH) --height $(VIDEO_HEIGHT) --width $(VIDEO_WIDTH) -r $(VIDEO_FPS)
+
 png2jpeg:
 	@echo "Converting PNG files to JPEG..."
 	@echo "Input directory: $(INPUT_DIR)"
@@ -56,4 +65,4 @@ rgb2grayscale:
 	@echo "Output directory: $(OUTPUT_DIR)"
 	python -m utils.convert_images rgb2grayscale $(INPUT_DIR) $(OUTPUT_DIR)
 
-.PHONY: all networks.train networks.inference install png2jpeg rgb2grayscale
+.PHONY: all networks.train networks.inference networks.video install png2jpeg rgb2grayscale
