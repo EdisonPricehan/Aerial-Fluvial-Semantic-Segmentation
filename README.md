@@ -49,6 +49,15 @@ An example usage is
 python -m networks.inference '../dataset/afid/test.csv' '../models/unet-resnet34-128x128.ckpt'
 ```
 
+## Prediction
+If you want to do prediction on your own video, you can use the [inference_video.py](./src/networks/inference_video.py) script.
+An example usage is
+```shell
+python -m networks.inference_video -i video-path/video_path.csv -o ./output.mp4 -m ../models/unet-resnet34-128x128.ckpt --height 128 --width 128 -r 1
+```
+where `-i` is the csv file path that contains all input videos, `-o` is the output video path with desired suffix, `-m` is the model checkpoint path, `--height` and `--width` are the height and width of the input frames, and `-r` is the frame rate of the output video.
+
+
 ## Citation
 If you use the AFID dataset or this repo in your work, please cite our paper. Thanks.
 ```
