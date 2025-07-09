@@ -11,7 +11,7 @@ from torchvision.io import write_video
 
 from networks.dataset import VideoDataset
 from utils import video_transforms as transforms
-from networks.inference import get_model, inference
+from networks.inference import get_model, predict
 
 
 if __name__ == '__main__':
@@ -77,7 +77,7 @@ if __name__ == '__main__':
 
         if model:  # feed into model and get predictions
             print("Start inferring ...")
-            pred_masks_list = inference(model, video_loader)
+            pred_masks_list = predict(model, video_loader)
             target_tensor = torch.cat(pred_masks_list, dim=0)  # [N x C x H x W]
             target_tensor = target_tensor.permute(0, 2, 3, 1)  # [N x H x W x C]
             target_tensor = torch.cat([target_tensor] * 3, dim=-1)  # single channel gray to 3 channel rgb gray
