@@ -1,17 +1,19 @@
-albumentations==2.0.8
-fire==0.7.0
-fvcore==0.1.5.post20221221
-lightning==2.5.1.post0
-matplotlib==3.10.3
-numpy==2.2.6
-onnx==1.17.0
-onnxruntime==1.21.1
-opencv_python==4.11.0.86
-pandas==2.2.3
-patchify==0.2.3
-Pillow==11.2.1
-segmentation_models_pytorch==0.5.0
-skimage==0.0
-torch==2.7.0
-torchvision==0.22.0
-tqdm==4.67.1
+albumentations==2.0.8                        # advanced augmentation library for deep learning
+fire==0.7.0                                  # library for automatically generating command line interfaces
+fvcore==0.1.5.post20221221                   # library for computer vision research
+lightning==2.5.1.post0                       # Deep Learning framework to train, deploy, and ship AI products
+matplotlib==3.10.3                           # library for creating static, animated, and interactive visualizations
+numpy==1.26.4                                # Fundamental package for array computing in Python
+onnx==1.17.0                                 # ONNX is an open format built to represent machine learning models
+onnxruntime==1.21.1                          # ONNX Runtime is a cross-platform
+opencv_python==4.11.0.86                     # Wrapper package for OpenCV (Open Computer Vision) python bindings
+pandas==2.2.3                                # Powerful data structures for data analysis, time series, and statistics
+patchify==0.2.3                              # library that helps you split image into small, overlappable patches
+pdbpp==0.11.6                                # pdb++, a drop-in replacement for pdb
+pillow==11.2.1                               # Python Imaging Library
+scikit-image==0.25.2                         # Image processing in Python
+segmentation_models_pytorch==0.5.0           # Image segmentation models with pre-trained backbones with Keras
+torch==2.7.0                                 # Tensors and Dynamic neural networks
+torchvision==0.22.0                          # image and video datasets and models for torch deep learning
+tqdm==4.67.1                                 # Fast, Extensible Progress Meter
+wandb==0.19.11                               # A CLI and library for interacting with the Weights & Biases API

@@ -1,0 +1,5 @@
+.DS_Store
+AerialFluvialDataset/*
+__pycache__/
+src/logs/
+src/images/jpeg/
