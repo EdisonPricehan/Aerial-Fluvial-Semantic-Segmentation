@@ -14,14 +14,15 @@ all:
 	@echo "                            Robust Semantic Segmentation with Adversarial Feature Inference"
 	@echo "-------------------------------------------------------------------------------------------------------------------------"
 	@echo ""
-	@echo " make install                                                                      # install requirements"
-	@echo " make AFID_PATH=[../dataset/afid/] LEARNING_RATE=[0.0001] networks.train           # train neural network (original code)"
-	@echo " make AFID_PATH=[../dataset/afid/] LEARNING_RATE=[0.0001] networks.train.vgg13     # train neural network (encoder=vgg13)"
-	@echo " make CKPT=<checkpoint> PROJECT_NAME=<project> networks.inference                  # run inference on trained model"
-	@echo " make VIDEO_CSV=<csv> OUTPUT_VIDEO=<output> MODEL_PATH=<model> networks.video      # run video inference with model"
-	@echo "                                                                                   # other parameters: [VIDEO_HEIGHT], [VIDEO_WIDTH], [VIDEO_FPS]"
-	@echo " make INPUT_DIR=<input> OUTPUT_DIR=<output> png2jpeg                               # convert PNG files to JPEG"
-	@echo " make INPUT_DIR=<input> OUTPUT_DIR=<output> rgb2grayscale                          # convert RGB PNG to grayscale PNG"
+	@echo " make install                                                                           # install requirements"
+	@echo " make AFID_PATH=[../dataset/afid/] LEARNING_RATE=[0.0001] networks.train                # train neural network (original code)"
+	@echo " make AFID_PATH=[../dataset/afid/] LEARNING_RATE=[0.0001] networks.train.vgg13          # train neural network (encoder=vgg13)"
+	@echo " make AFID_PATH=[../dataset/afid/] LEARNING_RATE=[0.0001] networks.train.resnet110      # train neural network (encoder=resnet110)"
+	@echo " make CKPT=<checkpoint> PROJECT_NAME=<project> networks.inference                       # run inference on trained model"
+	@echo " make VIDEO_CSV=<csv> OUTPUT_VIDEO=<output> MODEL_PATH=<model> networks.video           # run video inference with model"
+	@echo "                                                                                        # other parameters: [VIDEO_HEIGHT], [VIDEO_WIDTH], [VIDEO_FPS]"
+	@echo " make INPUT_DIR=<input> OUTPUT_DIR=<output> png2jpeg                                    # convert PNG files to JPEG"
+	@echo " make INPUT_DIR=<input> OUTPUT_DIR=<output> rgb2grayscale                               # convert RGB PNG to grayscale PNG"
 	@echo ""
 
 # Default paths for the AFID dataset and the checkpoint
@@ -32,6 +33,8 @@ CKPT ?= ../logs/lightning_logs/5ai3ighy/checkpoints/epoch=36-step=407.ckpt
 LEARNING_RATE ?= 0.0001
 # Project name for wandb logging during inference
 PROJECT_NAME ?= aerial-fluvial-inference
+# Encoder weights for training
+ENCODER_WEIGHTS ?= imagenet
 # Video inference parameters (defaulting values)
 VIDEO_HEIGHT ?= 320
 VIDEO_WIDTH ?= 544
@@ -42,10 +45,13 @@ install:
 	pip install -r ../requirements.txt
 
 networks.train:
-	python -m networks.train -l $(LEARNING_RATE) $(AFID_PATH)/train.csv $(AFID_PATH)/test.csv
+	python -m networks.train -l $(LEARNING_RATE) --encoder $(ENCODER) --decoder $(DECODER) $(AFID_PATH)/train.csv $(AFID_PATH)/test.csv
 
 networks.train.vgg13:
 	python -m networks.train -l $(LEARNING_RATE) --encoder vgg13 $(AFID_PATH)/train.csv $(AFID_PATH)/test.csv
+
+networks.custom.train:
+	python -m networks.train -l $(LEARNING_RATE) --encoder $(ENCODER) --decoder $(DECODER) --encoder-weights $(ENCODER_WEIGHTS) $(AFID_PATH_TRAIN) $(AFID_PATH_TEST)
 
 networks.inference:
 	python -m networks.inference $(AFID_PATH)/test.csv $(CKPT) --project-name $(PROJECT_NAME)

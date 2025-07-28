@@ -19,6 +19,7 @@ class LitSegModel(L.LightningModule):
             in_channels: int,
             out_classes: int,
             lr: float = 1e-4,
+            encoder_weights: str = "imagenet",
             **kwargs: Dict[str, Any],
     ):
         super().__init__()
@@ -33,12 +34,13 @@ class LitSegModel(L.LightningModule):
         self.model = smp.create_model(
             arch=arch,
             encoder_name=encoder_name,
+            encoder_weights=encoder_weights,
             in_channels=in_channels,
             classes=out_classes, **kwargs
         )
 
         # Preprocessing parameters for image
-        params = smp.encoders.get_preprocessing_params(encoder_name)
+        params = smp.encoders.get_preprocessing_params(encoder_name, encoder_weights)
         self.register_buffer("std", torch.tensor(params["std"]).view(1, 3, 1, 1))
         self.register_buffer("mean", torch.tensor(params["mean"]).view(1, 3, 1, 1))
 
