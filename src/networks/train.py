@@ -42,6 +42,9 @@ if __name__ == '__main__':
                         help='Learning rate (default: 1e-4)')
     parser.add_argument('--encoder-weights', type=str, default='imagenet',
                         help='Pre-trained weights of the encoder')
+    parser.add_argument('--activation', type=str, default='sigmoid',
+                        choices=['sigmoid', 'softmax', 'tanh'],
+                        help='Activation function for output layer (default: sigmoid)')
 
     # Parse all arguments
     args = parser.parse_args()
@@ -61,6 +64,7 @@ if __name__ == '__main__':
     out_class_num = args.out_class_num
     learning_rate = args.learning_rate
     encoder_weights = args.encoder_weights
+    activation = args.activation
 
     # Check encoder existence
     if not check_encoder_existence(encoder):
@@ -105,7 +109,7 @@ if __name__ == '__main__':
 
     # Construct desired model
     model = LSM(arch=decoder, encoder_name=encoder, encoder_weights=encoder_weights,
-                in_channels=3, out_classes=out_class_num, lr=learning_rate)
+                in_channels=3, out_classes=out_class_num, lr=learning_rate, activation=activation)
 
     # Construct model trainer
     trainer = L.Trainer(

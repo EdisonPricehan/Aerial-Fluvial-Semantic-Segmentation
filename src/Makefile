@@ -24,6 +24,18 @@ all:
 	@echo " make INPUT_DIR=<input> OUTPUT_DIR=<output> png2jpeg                                    # convert PNG files to JPEG"
 	@echo " make INPUT_DIR=<input> OUTPUT_DIR=<output> rgb2grayscale                               # convert RGB PNG to grayscale PNG"
 	@echo ""
+	@echo " Available Parameters:"
+	@echo "   LEARNING_RATE=<float>     # Learning rate for training (default: 0.0001)"
+	@echo "   ENCODER=<string>          # Encoder architecture (default: resnet34)"
+	@echo "   DECODER=<string>          # Decoder architecture (default: DeepLabV3Plus)"
+	@echo "   ENCODER_WEIGHTS=<string>  # Pre-trained encoder weights (default: imagenet)"
+	@echo "   ACTIVATION=<string>       # Output activation function (default: sigmoid)"
+	@echo "                              # Available: sigmoid, softmax, tanh"
+	@echo ""
+	@echo " Examples:"
+	@echo "   make ACTIVATION=softmax networks.train                    # Train with softmax activation"
+	@echo "   make ACTIVATION=tanh LEARNING_RATE=0.001 networks.train  # Train with tanh activation and custom learning rate"
+	@echo ""
 
 # Default paths for the AFID dataset and the checkpoint
 AFID_PATH ?= ../dataset/afid/
@@ -35,6 +47,8 @@ LEARNING_RATE ?= 0.0001
 PROJECT_NAME ?= aerial-fluvial-inference
 # Encoder weights for training
 ENCODER_WEIGHTS ?= imagenet
+# Activation function for output layer
+ACTIVATION ?= sigmoid
 # Video inference parameters (defaulting values)
 VIDEO_HEIGHT ?= 320
 VIDEO_WIDTH ?= 544
@@ -45,13 +59,13 @@ install:
 	pip install -r ../requirements.txt
 
 networks.train:
-	python -m networks.train -l $(LEARNING_RATE) --encoder $(ENCODER) --decoder $(DECODER) $(AFID_PATH)/train.csv $(AFID_PATH)/test.csv
+	python -m networks.train -l $(LEARNING_RATE) --encoder $(ENCODER) --decoder $(DECODER) --activation $(ACTIVATION) $(AFID_PATH)/train.csv $(AFID_PATH)/test.csv
 
 networks.train.vgg13:
 	python -m networks.train -l $(LEARNING_RATE) --encoder vgg13 $(AFID_PATH)/train.csv $(AFID_PATH)/test.csv
 
 networks.custom.train:
-	python -m networks.train -l $(LEARNING_RATE) --encoder $(ENCODER) --decoder $(DECODER) --encoder-weights $(ENCODER_WEIGHTS) $(AFID_PATH_TRAIN) $(AFID_PATH_TEST)
+	python -m networks.train -l $(LEARNING_RATE) --encoder $(ENCODER) --decoder $(DECODER) --encoder-weights $(ENCODER_WEIGHTS) --activation $(ACTIVATION) $(AFID_PATH_TRAIN) $(AFID_PATH_TEST)
 
 networks.inference:
 	python -m networks.inference $(AFID_PATH)/test.csv $(CKPT) --project-name $(PROJECT_NAME)

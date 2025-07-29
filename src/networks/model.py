@@ -20,12 +20,14 @@ class LitSegModel(L.LightningModule):
             out_classes: int,
             lr: float = 1e-4,
             encoder_weights: str = "imagenet",
+            activation: str = "sigmoid",
             **kwargs: Dict[str, Any],
     ):
         super().__init__()
 
         # Define member variables
         self.lr: float = lr
+        self.activation: str = activation
         self.train_outputs: EPOCH_OUTPUTS = []
         self.valid_outputs: EPOCH_OUTPUTS = []
         self.test_outputs: EPOCH_OUTPUTS = []
@@ -216,7 +218,15 @@ class LitSegModel(L.LightningModule):
         Returns:
 
         """
-        prob_mask = logits_mask.sigmoid()
+        if self.activation == "sigmoid":
+            prob_mask = logits_mask.sigmoid()
+        elif self.activation == "softmax":
+            prob_mask = torch.softmax(logits_mask, dim=1)
+        elif self.activation == "tanh":
+            prob_mask = torch.tanh(logits_mask)
+        else:
+            raise ValueError(f"Unsupported activation function: {self.activation}")
+
         pred_mask = (prob_mask > 0.5).float()
         return (pred_mask * 255).to(torch.uint8) if uint8 else pred_mask
 
