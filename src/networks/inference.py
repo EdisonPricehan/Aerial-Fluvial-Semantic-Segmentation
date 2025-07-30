@@ -3,7 +3,7 @@
 import argparse
 import os
 from pprint import pprint
-from typing import Optional
+from typing import Optional, List
 
 from networks.dataset import FluvialDataset
 from networks.model import LitSegModel as LSM, check_encoder_existence, check_decoder_existence
@@ -21,13 +21,47 @@ torch.set_float32_matmul_precision('medium')  # {'highest', 'high', 'medium'}
 
 
 def inference(model: LSM, test_dataloader: DataLoader, logger: Optional[WandbLogger] = None):
+    """
+    Perform inference on the test dataset using the provided model.
+    The dataset of the test_dataloader expects images and masks as input and target respectively.
+    Args:
+        model: The lightning model to be used for inference.
+        test_dataloader: The DataLoader for the test dataset.
+        logger: Optional; a logger to log the results. If None, no logging will be performed.
+
+    Returns:
+
+    """
     trainer = L.Trainer(max_epochs=1, logger=(logger if logger is not None else False))
-    # start testing
+
     trainer.test(model, test_dataloader, verbose=True)
-    # return trainer.predict(model, dataloaders=test_dataloader)
+
+
+def predict(model: LSM, test_dataloader: DataLoader, logger: Optional[WandbLogger] = None) -> List[torch.Tensor]:
+    """
+    Perform prediction on the test dataset using the provided model.
+    The dataset of the test_dataloader expects ONLY images as input.
+    Args:
+        model: The lightning model to be used for prediction.
+        test_dataloader: The DataLoader for the test dataset.
+        logger: Optional; a logger to log the results. If None, no logging will be performed.
+
+    Returns:
+        A list of tensors (predictions) from the model.
+    """
+    trainer = L.Trainer(max_epochs=1, logger=(logger if logger is not None else False))
+    return trainer.predict(model, dataloaders=test_dataloader)
 
 
 def get_model(model_path: str) -> LSM:
+    """
+    Load a model from the specified checkpoint path.
+    Args:
+        model_path: Relative path of the model checkpoint to be loaded.
+
+    Returns:
+        An instance of the LSM model loaded from the checkpoint.
+    """
     checkpoint_path = os.path.join(os.path.dirname(__file__), model_path)
     assert os.path.exists(checkpoint_path), f'{checkpoint_path} does not exist!'
     m = LSM.load_from_checkpoint(checkpoint_path=checkpoint_path)
@@ -35,11 +69,22 @@ def get_model(model_path: str) -> LSM:
 
 
 def get_dataloader(ds_path: str, resolution_level: RESOLUTIONS = 'low') -> DataLoader:
+    """
+    Create a DataLoader for the test dataset with the specified resolution level.
+    Args:
+        ds_path: Relative path of the dataset csv file in src/dataset/
+        resolution_level: The resolution level for the images and masks.
+
+    Returns:
+        A DataLoader for the test dataset.
+    """
     resize_transform = get_transform_by_resolution_level(resolution_level)
     test_data = FluvialDataset(ds_path, use_augment=False, transform=resize_transform, target_transform=resize_transform)
     print(f"Test num: {len(test_data)}")
     print(f"Image size: {test_data[0][0].shape}, mask size: {test_data[0][1].shape}")
+
     test_dataloader = DataLoader(test_data, batch_size=test_bs, shuffle=False)
+
     return test_dataloader
 
 
@@ -51,6 +96,19 @@ def get_logger(
         trainset: str = 'pretraining',
         testset: str = 'wabash_wildcat',
 ):
+    """
+    Initialize a WandbLogger for logging the test results.
+    Args:
+        encoder_name: The name of the encoder used in the model.
+        decoder_name: The name of the decoder used in the model.
+        project_name: The name of the project for logging.
+        test_batch_size: The batch size used for testing.
+        trainset: The name of the training dataset used.
+        testset: The name of the test dataset used.
+
+    Returns:
+        A WandbLogger instance if all parameters are provided, otherwise None.
+    """
     if encoder_name == '' or decoder_name == '' or project_name == '' or test_batch_size is None:
         print("Need arguments to init logger, return None logger.")
         return None

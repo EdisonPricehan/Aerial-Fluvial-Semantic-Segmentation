@@ -35,11 +35,19 @@ if __name__ == '__main__':
     parser.add_argument('-vb', '--validation-batch-size', type=int, default=1, metavar='N',
                         help='Validation batch size override (default: 1)')
     parser.add_argument('-e', '--encoder', type=str, default='resnet34', help='Encoder type')
-    parser.add_argument('-d', '--decoder', type=str, default='Unet', help='Decoder type')
+    parser.add_argument('-d', '--decoder', type=str, default='DeepLabV3Plus', help='Decoder type')
     parser.add_argument('--epochs', type=int, default=75, metavar='N', help='Epochs number')
     parser.add_argument('-c', '--out-class-num', type=int, default=1, metavar='N', help='Output class number')
     parser.add_argument('-l', '--learning-rate', type=float, default=1e-4, metavar='LR',
                         help='Learning rate (default: 1e-4)')
+    parser.add_argument('--encoder-weights', type=str, default='imagenet',
+                        help='Pre-trained weights of the encoder')
+    parser.add_argument('--activation', type=str, default='sigmoid',
+                        choices=['sigmoid', 'softmax', 'tanh'],
+                        help='Activation function for output layer (default: sigmoid)')
+    parser.add_argument('--optimizer', type=str, default='adam',
+                        choices=['adam', 'sgd', 'rmsprop', 'adamw', 'adamax', 'adagrad'],
+                        help='Optimizer for training (default: adam)')
 
     # Parse all arguments
     args = parser.parse_args()
@@ -58,6 +66,9 @@ if __name__ == '__main__':
     epochs = args.epochs
     out_class_num = args.out_class_num
     learning_rate = args.learning_rate
+    encoder_weights = args.encoder_weights
+    activation = args.activation
+    optimizer_name = args.optimizer
 
     # Check encoder existence
     if not check_encoder_existence(encoder):
@@ -101,7 +112,9 @@ if __name__ == '__main__':
                                         patience=10, verbose=False, mode="max")
 
     # Construct desired model
-    model = LSM(arch=decoder, encoder_name=encoder, in_channels=3, out_classes=out_class_num, lr=learning_rate)
+    model = LSM(arch=decoder, encoder_name=encoder, encoder_weights=encoder_weights,
+                in_channels=3, out_classes=out_class_num, lr=learning_rate, 
+                activation=activation, optimizer_name=optimizer_name)
 
     # Construct model trainer
     trainer = L.Trainer(
