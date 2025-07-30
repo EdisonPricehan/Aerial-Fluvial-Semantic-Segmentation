@@ -21,6 +21,7 @@ class LitSegModel(L.LightningModule):
             lr: float = 1e-4,
             encoder_weights: str = "imagenet",
             activation: str = "sigmoid",
+            optimizer_name: str = "adam",
             **kwargs: Dict[str, Any],
     ):
         super().__init__()
@@ -28,6 +29,7 @@ class LitSegModel(L.LightningModule):
         # Define member variables
         self.lr: float = lr
         self.activation: str = activation
+        self.optimizer_name: str = optimizer_name
         self.train_outputs: EPOCH_OUTPUTS = []
         self.valid_outputs: EPOCH_OUTPUTS = []
         self.test_outputs: EPOCH_OUTPUTS = []
@@ -231,7 +233,20 @@ class LitSegModel(L.LightningModule):
         return (pred_mask * 255).to(torch.uint8) if uint8 else pred_mask
 
     def configure_optimizers(self):
-        return torch.optim.Adam(self.parameters(), lr=self.lr)
+        if self.optimizer_name.lower() == "adam":
+            return torch.optim.Adam(self.parameters(), lr=self.lr)
+        elif self.optimizer_name.lower() == "sgd":
+            return torch.optim.SGD(self.parameters(), lr=self.lr, momentum=0.9)
+        elif self.optimizer_name.lower() == "rmsprop":
+            return torch.optim.RMSprop(self.parameters(), lr=self.lr)
+        elif self.optimizer_name.lower() == "adamw":
+            return torch.optim.AdamW(self.parameters(), lr=self.lr, weight_decay=0.01)
+        elif self.optimizer_name.lower() == "adamax":
+            return torch.optim.Adamax(self.parameters(), lr=self.lr)
+        elif self.optimizer_name.lower() == "adagrad":
+            return torch.optim.Adagrad(self.parameters(), lr=self.lr)
+        else:
+            raise ValueError(f"Unsupported optimizer: {self.optimizer_name}")
 
 
 def check_encoder_existence(encoder_name: str) -> bool:

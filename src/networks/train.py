@@ -45,6 +45,9 @@ if __name__ == '__main__':
     parser.add_argument('--activation', type=str, default='sigmoid',
                         choices=['sigmoid', 'softmax', 'tanh'],
                         help='Activation function for output layer (default: sigmoid)')
+    parser.add_argument('--optimizer', type=str, default='adam',
+                        choices=['adam', 'sgd', 'rmsprop', 'adamw', 'adamax', 'adagrad'],
+                        help='Optimizer for training (default: adam)')
 
     # Parse all arguments
     args = parser.parse_args()
@@ -65,6 +68,7 @@ if __name__ == '__main__':
     learning_rate = args.learning_rate
     encoder_weights = args.encoder_weights
     activation = args.activation
+    optimizer_name = args.optimizer
 
     # Check encoder existence
     if not check_encoder_existence(encoder):
@@ -109,7 +113,8 @@ if __name__ == '__main__':
 
     # Construct desired model
     model = LSM(arch=decoder, encoder_name=encoder, encoder_weights=encoder_weights,
-                in_channels=3, out_classes=out_class_num, lr=learning_rate, activation=activation)
+                in_channels=3, out_classes=out_class_num, lr=learning_rate, 
+                activation=activation, optimizer_name=optimizer_name)
 
     # Construct model trainer
     trainer = L.Trainer(
