@@ -48,6 +48,8 @@ if __name__ == '__main__':
     parser.add_argument('--optimizer', type=str, default='adam',
                         choices=['adam', 'sgd', 'rmsprop', 'adamw', 'adamax', 'adagrad'],
                         help='Optimizer for training (default: adam)')
+    parser.add_argument('--early-stop-patience', type=int, default=10, metavar='N',
+                        help='Early stopping patience in epochs (default: 10)')
 
     # Parse all arguments
     args = parser.parse_args()
@@ -69,6 +71,7 @@ if __name__ == '__main__':
     encoder_weights = args.encoder_weights
     activation = args.activation
     optimizer_name = args.optimizer
+    early_stop_patience = args.early_stop_patience
 
     # Check encoder existence
     if not check_encoder_existence(encoder):
@@ -109,7 +112,7 @@ if __name__ == '__main__':
 
     # Init early stopping callback, stop training if no improvement for 10 epochs
     early_stop_callback = EarlyStopping(monitor="valid_dataset_f1", min_delta=0.00,
-                                        patience=10, verbose=False, mode="max")
+                                        patience=early_stop_patience, verbose=False, mode="max")
 
     # Construct desired model
     model = LSM(arch=decoder, encoder_name=encoder, encoder_weights=encoder_weights,

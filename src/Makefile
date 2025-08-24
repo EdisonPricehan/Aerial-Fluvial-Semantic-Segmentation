@@ -33,12 +33,14 @@ all:
 	@echo "                             # Available: sigmoid, softmax, tanh"
 	@echo "   OPTIMIZER=<string>        # Training optimizer (default: adam)"
 	@echo "                             # Available: adam, sgd, rmsprop, adamw, adamax, adagrad"
+	@echo "   EARLY_STOP_PATIENCE=<int> # Early stopping patience in epochs (default: 10)"
 	@echo ""
 	@echo " Examples:"
 	@echo "   make ACTIVATION=softmax networks.train                   # Train with softmax activation"
 	@echo "   make ACTIVATION=tanh LEARNING_RATE=0.001 networks.train  # Train with tanh activation and custom learning rate"
 	@echo "   make OPTIMIZER=sgd networks.train                        # Train with SGD optimizer"
 	@echo "   make OPTIMIZER=adamw ACTIVATION=softmax networks.train   # Train with AdamW and softmax"
+	@echo "   make EARLY_STOP_PATIENCE=15 networks.train               # Train with 15 epochs patience for early stopping"
 	@echo ""
 
 # Default paths for the AFID dataset and the checkpoint
@@ -55,6 +57,8 @@ ENCODER_WEIGHTS ?= imagenet
 ACTIVATION ?= sigmoid
 # Optimizer for training
 OPTIMIZER ?= adam
+# Early stopping patience in epochs
+EARLY_STOP_PATIENCE ?= 10
 # Video inference parameters (defaulting values)
 VIDEO_HEIGHT ?= 320
 VIDEO_WIDTH ?= 544
@@ -65,13 +69,13 @@ install:
 	pip install -r ../requirements.txt
 
 networks.train:
-	python -m networks.train -l $(LEARNING_RATE) --encoder $(ENCODER) --decoder $(DECODER) --activation $(ACTIVATION) --optimizer $(OPTIMIZER) $(AFID_PATH)/train.csv $(AFID_PATH)/test.csv
+	python -m networks.train -l $(LEARNING_RATE) --encoder $(ENCODER) --decoder $(DECODER) --activation $(ACTIVATION) --optimizer $(OPTIMIZER) --early-stop-patience $(EARLY_STOP_PATIENCE) $(AFID_PATH)/train.csv $(AFID_PATH)/test.csv
 
 networks.train.vgg13:
-	python -m networks.train -l $(LEARNING_RATE) --encoder vgg13 $(AFID_PATH)/train.csv $(AFID_PATH)/test.csv
+	python -m networks.train -l $(LEARNING_RATE) --encoder vgg13 --early-stop-patience $(EARLY_STOP_PATIENCE) $(AFID_PATH)/train.csv $(AFID_PATH)/test.csv
 
 networks.custom.train:
-	python -m networks.train -l $(LEARNING_RATE) --encoder $(ENCODER) --decoder $(DECODER) --encoder-weights $(ENCODER_WEIGHTS) --activation $(ACTIVATION) --optimizer $(OPTIMIZER) $(AFID_PATH_TRAIN) $(AFID_PATH_TEST)
+	python -m networks.train -l $(LEARNING_RATE) --encoder $(ENCODER) --decoder $(DECODER) --encoder-weights $(ENCODER_WEIGHTS) --activation $(ACTIVATION) --optimizer $(OPTIMIZER) --early-stop-patience $(EARLY_STOP_PATIENCE) $(AFID_PATH_TRAIN) $(AFID_PATH_TEST)
 
 networks.inference:
 	python -m networks.inference $(AFID_PATH)/test.csv $(CKPT) --project-name $(PROJECT_NAME)
